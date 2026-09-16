@@ -1,0 +1,19 @@
+{
+  "_note": "Cached sample pull from a live Tally MCP connection, captured 2026-09-16 during setup. Kept as an offline fallback per CLAUDE.md Section 6 in case the Tally sandbox is flaky on demo day.",
+  "company": "Techno Traders Ltd",
+  "ledgers": [
+    "Airline Charges", "Amazon", "Axe Automation", "Building", "Cash", "CGST 9%",
+    "Croma", "Depreciation", "Director Remuneration", "Electricity Charges",
+    "Flipkart", "Furniture", "HDFC Bank", "Himaja IT Solutions", "IGST 18%",
+    "Ikea Furnitures", "Infosys Ltd", "Ingram Micro", "Inspire India",
+    "Interest on OD", "Jio Digital", "Land", "LTIMind Tree",
+    "Microsoft Corp India", "OneRoof Warehouses", "OSR Enterprises",
+    "Paid-Up Capital", "Policy Expense", "Profit & Loss A/c",
+    "Provision of Electricity Charges", "Purchase Laptop", "Railway Ticket",
+    "Salary", "Sales Laptop", "SBI", "Seer Tech IT Solutions", "SGST 9%",
+    "Shipping Charges", "Shyam Delivery & Transport", "Software Conduit",
+    "Tata Cliq", "Tata Consultancy Services", "Tea & Refreshment",
+    "Tech Mahindra", "Toshiba India", "Vijay Sales", "Warehouse Charges",
+    "Wipro Technology"
+  ]
+}
