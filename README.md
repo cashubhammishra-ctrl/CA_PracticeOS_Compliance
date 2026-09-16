@@ -2,6 +2,12 @@
 
 AICA Level 2 capstone. See [CLAUDE.md](CLAUDE.md) for the full build plan, session schedule, and priority rules.
 
+**Submission docs:** [project_summary.pdf](project_summary.pdf) (problem, architecture,
+L1→L2 evolution, proof points, learnings) · [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) (talking
+points for the demo video) · `prompts/*.md` (all 3 agent prompts, documented) ·
+[connectors/connector_setup.md](connectors/connector_setup.md) (Tally MCP setup and its
+local-only limitation).
+
 ## Setup
 
 ```bash
@@ -266,3 +272,21 @@ a bug.
     210 expects the fee basis to actually be stated), so the doc was corrected
     to match the stricter, more correct behavior rather than "fixing" the
     code to match an outdated example.
+
+- **Tue 22 Sep** — **Docs + video prep.** Deployment (GitHub repo + Render
+  account) is still deferred to a later session at the user's choice, so
+  today focused entirely on the written deliverables:
+  - `project_summary.pdf` — 2-page written summary (problem, the 3
+    agents + connector, architecture table, L1→L2 evolution, the same three
+    proof points from this log, learnings, and an honest roadmap section for
+    Zoho/SAP and the pending deployment). Generated with `reportlab`.
+  - `VIDEO_SCRIPT.md` — talking points for the 5–6 minute face+screen video,
+    structured to open by naming this a compliance product and lead the demo
+    with Agent 3 (per CLAUDE.md's explicit framing requirement), with Agent 1,
+    Agent 2, and the Tally connector as supporting segments in that priority
+    order, plus the exact phrases the video brief calls out to say out loud
+    ("compliance product," "extracts → validates → then acts").
+  - Confirmed all 3 prompt files (`prompts/*.md`) and
+    `connectors/connector_setup.md` are already complete and current from
+    prior sessions — no changes needed there.
+  - This README now links the submission docs at the top for discoverability.
