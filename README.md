@@ -226,3 +226,43 @@ a bug.
     GitHub repo and Render account needs the user's own login, so that's
     queued for a near-term session once those are set up — `deployment_link.txt`
     is scaffolded and ready to fill in.
+
+- **Mon 21 Sep** — **Full regression test + extra scrutiny on Agent 3, no
+  regressions found, one documentation correction.** Since live deployment is
+  still pending GitHub/Render account setup, "fresh browser/incognito" was
+  treated as a full clean-state pass: cleared all `__pycache__`, re-ran every
+  batch script (Agent 1 on all 6 onboarding fixtures, Agent 3 on all 4 drafted
+  fixtures, the Agent 2 → Agent 3 pipeline on all 4 prompts) and every FastAPI
+  endpoint (all 8) from a fresh server process — identical results to prior
+  sessions across the board, no drift.
+
+  **Extra scrutiny on Agent 3** (the protected headline feature), targeting
+  paths never exercised before:
+  - Drafted a **General Certificate** and a **Working Paper** via Agent 2 (the
+    two document types Agent 3 supported but had never actually been tested
+    against) and ran Agent 3 on both. The Working Paper failed on all 5
+    clauses — correctly: its "Objective" and "Evidence / Exceptions" sections
+    contain only generic instructional boilerplate ("Document the work
+    performed...", "Supporting documents should be listed here...") rather
+    than this engagement's actual content, and Agent 3 correctly refused to
+    count boilerplate as substance. No bug — this is the strict behavior
+    working as intended, and a stronger differentiator than simple
+    keyword-presence checking.
+  - Fed a **raw HTML draft** (matching the shape Agent 2/the L1 app would
+    produce, with `<div class="doc">` wrappers and `<h2>` headings) directly
+    into Agent 3 — `strip_html()` handled it correctly and classification and
+    clause-checking both worked unaffected by the markup.
+  - Fed a **completely untitled document** with no document-type marker to
+    exercise the LLM classification fallback path (previously never directly
+    verified) — correctly classified as a Working Paper based on content
+    alone.
+  - Tested a **deliberately vague fee clause** ("fees to be mutually agreed...
+    prior to commencement," no amount, rate, or basis stated) against the
+    Engagement Letter checklist. The model marked it **absent**, reasoning
+    that deferring the fee without stating any basis doesn't satisfy what an
+    engagement letter needs to state. This is stricter than an example in
+    `prompts/compliance_agent.md` that suggested a vague fee mention should
+    still count as present — on reflection that example was too lenient (SA
+    210 expects the fee basis to actually be stated), so the doc was corrected
+    to match the stricter, more correct behavior rather than "fixing" the
+    code to match an outdated example.

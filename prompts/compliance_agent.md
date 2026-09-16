@@ -42,12 +42,18 @@ Return ONLY a JSON array, one object per clause, in the same order given, with k
 }
 
 Be strict: a clause is only "present" if its substance is actually in the text, not
-merely implied. A generic mention of the topic without the required content (e.g. a
-document that says "Fees: [To be agreed]" with no other fee terms) should still count
-as present if a fee mechanism is stated, but should count as absent if the section is
-missing entirely. Do not be fooled by section headings alone — check the content
-under the heading actually satisfies the clause's description.
+merely implied. Do not be fooled by section headings alone — check the content under
+the heading actually satisfies the clause's description.
 ```
+
+Tested 2026-09-21 against a deliberately vague fee clause ("Professional fees: to be
+mutually agreed between the parties in writing prior to commencement" — no amount,
+rate, or basis stated): the model correctly marks Fees as **absent**, reasoning that
+deferring the fee to a future agreement doesn't state a basis (fixed/hourly/percentage)
+the way SA 210 expects an engagement letter to. An earlier draft of this prompt
+suggested a vague fee mention should still count as "present" — that was too lenient
+and has been removed; the stricter behavior matches real audit engagement letter
+standards better.
 
 ## Agentic loop (perceive → reason → act → validate)
 

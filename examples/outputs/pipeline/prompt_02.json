@@ -17,7 +17,7 @@
       {
         "id": "purpose",
         "present": true,
-        "evidence": "\"for the purpose of Bank loan purposes.\"",
+        "evidence": "\"for the purpose of Bank loan purposes\"",
         "reason": "The document explicitly states the certificate is being issued for bank loan purposes.",
         "name": "Purpose Stated",
         "status": "present"
@@ -26,7 +26,7 @@
         "id": "assets_liabilities",
         "present": false,
         "evidence": "\"Assets ... [To be filled] ... Liabilities ... [To be filled] ... Net Worth: [To be computed once asset/liability figures are entered]\"",
-        "reason": "The statement contains only placeholders for assets, liabilities, and net worth with no actual itemized figures or a computed net worth value, so the substance of this clause is not fulfilled.",
+        "reason": "The assets, liabilities, and net worth sections are left as placeholders with no actual itemized figures or a computed net worth value, so the substantive content required by this clause is missing.",
         "name": "Assets, Liabilities and Net Worth Statement",
         "status": "absent"
       },
@@ -34,7 +34,7 @@
         "id": "representation",
         "present": true,
         "evidence": "\"The client has represented that the information and supporting documents provided for the above statement are complete and accurate to the best of their knowledge.\"",
-        "reason": "The document explicitly states the client's representation of completeness and accuracy of information provided.",
+        "reason": "The document explicitly states that the client represented the information/documents as complete and accurate.",
         "name": "Client Representation",
         "status": "present"
       },
@@ -42,7 +42,7 @@
         "id": "udin",
         "present": true,
         "evidence": "\"UDIN: ______________________\"",
-        "reason": "A UDIN field is present, even though left blank, satisfying the requirement per the instructions.",
+        "reason": "A UDIN field is present, albeit blank/pending, which satisfies the requirement per the instructions.",
         "name": "UDIN",
         "status": "present"
       },
@@ -50,7 +50,7 @@
         "id": "membership_no",
         "present": true,
         "evidence": "\"Membership No.: __________________\"",
-        "reason": "A membership number field for the signing CA is present, even though left blank.",
+        "reason": "A membership number field for the signing CA is present, even though left blank, satisfying the clause requirement.",
         "name": "Membership Number",
         "status": "present"
       }

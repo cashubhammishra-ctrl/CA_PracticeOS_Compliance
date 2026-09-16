@@ -4,7 +4,7 @@
     "doc_type": "Professional Fee Note",
     "client_name": "Sharma Enterprises",
     "fields": {
-      "assignment_type": "GST return filing services",
+      "assignment_type": "GST Return Filing Services",
       "fees": "Rs 15,000 plus GST",
       "service_description": "GST return filing services"
     },
@@ -17,8 +17,8 @@
       {
         "id": "description",
         "present": true,
-        "evidence": "GST return filing services ... \u20b915,000",
-        "reason": "The document explicitly describes the professional service being billed (GST return filing services).",
+        "evidence": "GST return filing services",
+        "reason": "The document specifies the professional service being billed as GST return filing services.",
         "name": "Service Description",
         "status": "present"
       },
@@ -26,7 +26,7 @@
         "id": "amount",
         "present": false,
         "evidence": "GST (as applicable) [To be computed]",
-        "reason": "While the professional fee amount (\u20b915,000) is stated, the GST/tax breakup is not actually computed or stated; it is left as a placeholder '[To be computed]', so the tax breakup is not substantively present.",
+        "reason": "While the professional fee of \u20b915,000 is stated, the GST/tax amount is left as a placeholder ('[To be computed]') rather than an actual stated tax breakup, so the clause is not substantively satisfied.",
         "name": "Fee Amount and Tax",
         "status": "absent"
       },
@@ -34,15 +34,15 @@
         "id": "total",
         "present": false,
         "evidence": "Total Invoice Value [To be computed]",
-        "reason": "The total invoice value is not stated as an actual figure; it is left blank/placeholder text, so the clause requirement of stating the total payable amount is not satisfied.",
+        "reason": "The total invoice value is not stated; it is left as an unfilled placeholder.",
         "name": "Total Invoice Value",
         "status": "absent"
       },
       {
         "id": "signature",
         "present": true,
-        "evidence": "For NSSJ & Co. CA Shubham Mishra Chartered Accountant",
-        "reason": "The document contains a firm signature block with the firm name, signatory name, and designation.",
+        "evidence": "For NSSJ & Co. / CA Shubham Mishra / Chartered Accountant",
+        "reason": "The document contains a firm signature block with the firm's name and signatory details.",
         "name": "Signature Block",
         "status": "present"
       }
