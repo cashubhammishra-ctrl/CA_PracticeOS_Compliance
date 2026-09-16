@@ -25,6 +25,5 @@ python src/test_claude_api.py
   Worth Certificate missing UDIN/membership number), sample drafting prompts collected.
   Tally MCP connection verified live against company "Techno Traders Ltd" (see
   `examples/outputs/sample_tally_pull.json` for a cached fallback pull).
-  **Pending:** a valid `ANTHROPIC_API_KEY` — none of the strings supplied so far matched
-  Anthropic's `sk-ant-...` key format, so `src/test_claude_api.py` has not been run
-  successfully yet. Needed before Thursday's Agent 1 session.
+  `ANTHROPIC_API_KEY` set in `.env` and `src/test_claude_api.py` runs successfully
+  ("API connection OK"). Setup complete — ready for Thursday's Agent 1 session.
