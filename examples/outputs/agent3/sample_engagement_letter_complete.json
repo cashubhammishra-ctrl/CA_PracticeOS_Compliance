@@ -5,7 +5,7 @@
     {
       "id": "scope",
       "present": true,
-      "evidence": "The objective of this engagement is to perform a tax audit under Section 44AB... Deliverable: Form 3CA/3CB and Form 3CD, duly signed and filed.",
+      "evidence": "The objective of this engagement is to perform a tax audit under Section 44AB of the Income Tax Act, 1961 and issue the agreed deliverable... Deliverable: Form 3CA/3CB and Form 3CD, duly signed and filed.",
       "reason": "States both the objective/scope of the engagement and the specific deliverable to be issued.",
       "name": "Objective and Scope",
       "status": "present"
@@ -13,8 +13,8 @@
     {
       "id": "responsibilities",
       "present": true,
-      "evidence": "Section 2: 'The client is responsible for maintaining appropriate books, records...' and Section 3: 'We will perform the agreed procedures and professional work with due professional care and in accordance with the applicable professional requirements...'",
-      "reason": "Both client and firm responsibilities are explicitly stated, including records/information/personnel for client and professional care/standards for the firm.",
+      "evidence": "Section 2: 'The client is responsible for maintaining appropriate books, records and supporting documentation; providing complete, accurate and timely information; making relevant personnel available...' Section 3: 'We will perform the agreed procedures and professional work with due professional care and in accordance with the applicable professional requirements relevant to the assignment.'",
+      "reason": "Both client responsibilities (records, information, personnel) and firm responsibilities (professional care, standards) are explicitly stated.",
       "name": "Client and Firm Responsibilities",
       "status": "present"
     },
@@ -22,7 +22,7 @@
       "id": "fees",
       "present": true,
       "evidence": "Professional fees: Rs. 50,000 plus applicable GST.",
-      "reason": "A specific fee amount is stated.",
+      "reason": "States a specific professional fee amount.",
       "name": "Fees",
       "status": "present"
     },
@@ -30,15 +30,15 @@
       "id": "limitations",
       "present": true,
       "evidence": "This engagement is subject to the inherent limitations of an audit and does not guarantee detection of all misstatements or fraud.",
-      "reason": "Explicitly states the inherent limitations regarding detection of misstatements or fraud.",
+      "reason": "Explicitly states the inherent limitations of the engagement regarding detection of misstatements or fraud.",
       "name": "Limitations",
       "status": "present"
     },
     {
       "id": "acceptance",
       "present": true,
-      "evidence": "Please sign and return a copy of this letter as acknowledgement of your understanding and acceptance of the engagement terms.",
-      "reason": "Provides for client signature and return as acceptance, with a signature block included.",
+      "evidence": "Please sign and return a copy of this letter as acknowledgement of your understanding and acceptance of the engagement terms. ... Accepted for and on behalf of the Client / Name / Designation: / Date:",
+      "reason": "Provides explicit instruction for the client to sign and return the letter, along with a signature block for acceptance.",
       "name": "Acceptance / Signature",
       "status": "present"
     }

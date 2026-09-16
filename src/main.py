@@ -2,6 +2,7 @@
 FastAPI backend for the CA PracticeOS Compliance AI Agent Layer.
 Wed 16 Sep: setup. Thu 17 Sep: Agent 1 (Onboarding). Fri 18 Sep: Agent 3
 (Compliance) - the product's headline / protected-priority feature.
+Sat 19 Sep: Agent 2 (Drafting), wired into Agent 3.
 """
 import csv
 import io
@@ -13,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agents.compliance import CHECKLISTS, ComplianceAgent
+from agents.drafting import DraftingAgent
 from agents.onboarding import OnboardingAgent
 from schema import CLIENT_MASTER_HEADERS, to_client_master_row
 
@@ -20,6 +22,7 @@ app = FastAPI(title="CA PracticeOS Compliance - AI Agent Layer")
 
 _onboarding_agent: OnboardingAgent | None = None
 _compliance_agent: ComplianceAgent | None = None
+_drafting_agent: DraftingAgent | None = None
 
 
 def get_onboarding_agent() -> OnboardingAgent:
@@ -34,6 +37,13 @@ def get_compliance_agent() -> ComplianceAgent:
     if _compliance_agent is None:
         _compliance_agent = ComplianceAgent()
     return _compliance_agent
+
+
+def get_drafting_agent() -> DraftingAgent:
+    global _drafting_agent
+    if _drafting_agent is None:
+        _drafting_agent = DraftingAgent()
+    return _drafting_agent
 
 
 @app.get("/health")
@@ -128,3 +138,32 @@ async def check_compliance_file(file: UploadFile = File(...), doc_type: str | No
         return agent.run(text, doc_type)
     except Exception as exc:
         raise HTTPException(500, f"Compliance check failed: {exc}") from exc
+
+
+class DraftingRequest(BaseModel):
+    instruction: str
+
+
+@app.post("/api/drafting/generate")
+def generate_draft(payload: DraftingRequest):
+    """Agent 2: one plain-English instruction -> extracted params + filled draft."""
+    agent = get_drafting_agent()
+    try:
+        return agent.run(payload.instruction)
+    except Exception as exc:
+        raise HTTPException(500, f"Drafting failed: {exc}") from exc
+
+
+@app.post("/api/drafting/generate-and-check")
+def generate_and_check(payload: DraftingRequest):
+    """Agent 2 -> Agent 3 connected end to end: drafts the document, then
+    immediately runs the compliance check on its own output, with no manual
+    step in between."""
+    drafting_agent = get_drafting_agent()
+    compliance_agent = get_compliance_agent()
+    try:
+        draft = drafting_agent.run(payload.instruction)
+        compliance = compliance_agent.run(draft["draft_text"], draft["doc_type"])
+        return {"agent2": draft, "agent3": compliance}
+    except Exception as exc:
+        raise HTTPException(500, f"Drafting/compliance pipeline failed: {exc}") from exc

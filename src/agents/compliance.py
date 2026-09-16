@@ -307,17 +307,25 @@ class ComplianceAgent:
 
     # ---- self-check / validate -------------------------------------------
     def self_check(self, text: str, doc_type: str, verdicts: list[dict]) -> list[dict]:
+        """Cross-checks each LLM verdict with a keyword heuristic. Deliberately
+        asymmetric: only used to catch the LLM claiming a clause is present with
+        zero textual basis (a strong, reliable signal of hallucination). It is
+        NOT used to second-guess an "absent" verdict, because judging whether a
+        clause's *substance* is missing (as opposed to a placeholder like
+        "[To be filled]" under an on-topic heading) requires the same semantic
+        judgment the keyword check can't make — heading words alone would
+        otherwise make every blank template look "needs review" instead of
+        cleanly absent."""
         checklist = {c["id"]: c for c in CHECKLISTS[doc_type]}
         text_lower = text.lower()
         checked = []
         for v in verdicts:
             clause = checklist.get(v["id"])
             keyword_hit = bool(clause) and any(kw in text_lower for kw in clause["keywords"])
-            status = "present" if v["present"] else "absent"
-            if v["present"] and not keyword_hit:
-                status = "needs_review"
-            elif not v["present"] and keyword_hit:
-                status = "needs_review"
+            if v["present"]:
+                status = "present" if keyword_hit else "needs_review"
+            else:
+                status = "absent"
             checked.append({**v, "name": clause["name"] if clause else v["id"], "status": status})
         return checked
 

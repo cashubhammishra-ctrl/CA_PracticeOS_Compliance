@@ -59,12 +59,18 @@ under the heading actually satisfies the clause's description.
    clauses for that document type at once (cheaper and more consistent than one call
    per clause), returns per-clause present/absent + evidence + reason.
 3. **Self-check / validate** (`::self_check`) — a keyword-heuristic pass cross-checks
-   each LLM verdict: if the LLM says a clause is present but none of that clause's
-   trigger keywords appear anywhere in the text, or the LLM says absent but several
-   trigger keywords are present, the item is downgraded to `needs_review` instead of
-   being trusted outright. This is the genuine self-checking step — it catches
-   potential LLM misses/hallucination rather than one-shot-trusting the model's
-   output.
+   each LLM verdict, but deliberately only in one direction: if the LLM says a clause
+   is present but none of that clause's trigger keywords appear anywhere in the text,
+   the item is downgraded to `needs_review` instead of being trusted outright — a
+   strong, reliable signal of hallucination. It does **not** second-guess an "absent"
+   verdict the same way, because judging whether a clause's substance is genuinely
+   missing (versus a placeholder like "[To be filled]" sitting under an on-topic
+   heading) requires the same semantic judgment the keyword check can't make; a blank
+   Net Worth Certificate template still contains the words "Assets" and "Liabilities"
+   in its column headers, so a symmetric check would flag every blank template as
+   "needs review" instead of cleanly absent. This is the genuine self-checking step —
+   it catches potential over-claiming rather than one-shot-trusting the model's
+   output, without manufacturing false uncertainty about genuinely missing content.
 4. **Act** (`::run`) — compiles the final report: overall verdict (PASS only if every
    clause is `present` and none need review), the list of missing clauses, and the
    list of clauses flagged for human review.

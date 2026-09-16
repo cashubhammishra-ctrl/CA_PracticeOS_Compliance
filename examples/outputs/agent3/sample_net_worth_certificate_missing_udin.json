@@ -6,7 +6,7 @@
       "id": "purpose",
       "present": true,
       "evidence": "for the purpose of bank loan application.",
-      "reason": "The document explicitly states the purpose as a bank loan application.",
+      "reason": "The document explicitly states the purpose of issuance as a bank loan application.",
       "name": "Purpose Stated",
       "status": "present"
     },
@@ -14,7 +14,7 @@
       "id": "assets_liabilities",
       "present": true,
       "evidence": "Assets ... Total Assets 59,70,000; Liabilities ... Total Liabilities 18,00,000; Net Worth: Rs. 41,70,000",
-      "reason": "The document contains an itemized list of assets and liabilities with a computed net worth figure.",
+      "reason": "An itemized list of assets and liabilities is provided along with a computed net worth figure.",
       "name": "Assets, Liabilities and Net Worth Statement",
       "status": "present"
     },
@@ -22,23 +22,23 @@
       "id": "representation",
       "present": true,
       "evidence": "The client has represented that the information and supporting documents provided for the above statement are complete and accurate to the best of their knowledge.",
-      "reason": "The document explicitly states the client's representation of completeness and accuracy.",
+      "reason": "This directly states the client's representation of completeness and accuracy.",
       "name": "Client Representation",
       "status": "present"
     },
     {
       "id": "udin",
       "present": false,
-      "evidence": "No UDIN field found in the document.",
-      "reason": "There is no mention of a UDIN anywhere in the certificate, even as a blank or pending field.",
+      "evidence": "No UDIN field found anywhere in the document.",
+      "reason": "The certificate does not contain a UDIN field, even blank or pending.",
       "name": "UDIN",
       "status": "absent"
     },
     {
       "id": "membership_no",
       "present": false,
-      "evidence": "For NSSJ & Associates / Chartered Accountant",
-      "reason": "The signing section only mentions the firm name and 'Chartered Accountant' designation without any ICAI membership number field.",
+      "evidence": "For NSSJ & Associates / Chartered Accountant (no membership number listed)",
+      "reason": "There is no ICAI membership number field for the signing CA.",
       "name": "Membership Number",
       "status": "absent"
     }

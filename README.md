@@ -49,6 +49,19 @@ Or batch-run it against all 4 sample drafts (see
 python src/run_agent3_on_samples.py
 ```
 
+Try Agent 2 (Drafting) from the CLI against a one-line instruction:
+
+```bash
+python src/agents/drafting.py "Prepare an engagement letter for ABC Pvt Ltd for tax audit AY 2025-26, fees Rs 50,000"
+```
+
+Or run the full Agent 2 → Agent 3 pipeline (drafts a document, then immediately
+compliance-checks its own output) against 4 sample prompts:
+
+```bash
+python src/run_agent2_then_agent3.py
+```
+
 ## Status (updated each session)
 
 - **Wed 16 Sep** — Repo initialized, virtualenv + `src/requirements.txt` installed, 8 sample
@@ -103,3 +116,36 @@ python src/run_agent3_on_samples.py
   Wired into FastAPI (`/api/compliance/check`, `/api/compliance/check-file`,
   `/api/compliance/document-types`) and verified live. Prompt documented in
   `prompts/compliance_agent.md`.
+
+- **Sat 19 Sep** — **Agent 2 (Drafting) built, and connected to Agent 3 end to
+  end.** `src/agents/drafting.py` turns one plain-English instruction into a
+  filled draft as a perceive → reason → act loop: one Claude call extracts
+  `doc_type`, `client_name`, and a flexible `fields` dict, then a template
+  renderer for that document type (all 6 types, mirroring the L1 app's own
+  `generate*()` section structure and firm defaults `NSSJ & Co.` / `CA Shubham
+  Mishra`) fills in the draft. Deliberately does **not** add a Limitations
+  clause to the Engagement Letter template that the L1 app's own generator
+  doesn't have — see `prompts/drafting_agent.md` for why.
+
+  **Pipeline proven end to end** (`src/run_agent2_then_agent3.py` and the new
+  `/api/drafting/generate-and-check` endpoint): Agent 2's draft feeds straight
+  into Agent 3 with no manual step in between. Ran against 4 sample
+  instructions — every one produced a real, non-contrived finding: the
+  engagement letter drafted from "tax audit AY 2025-26, fees Rs 50,000" fails
+  on the missing Limitations clause (a genuine gap in the firm's own standard
+  template, not a synthetic test case); the net worth certificate and fee note
+  correctly fail because their one-liners didn't supply asset/liability
+  figures or a GST-computed total, so the template's placeholder fields are
+  correctly caught as incomplete.
+
+  Two bugs fixed along the way: `format_inr()` couldn't parse fee strings like
+  "Rs 50,000" or "Rs 15,000 plus GST" (only handled bare numbers), silently
+  rendering fees as blank — fixed by stripping all non-numeric characters
+  before parsing. Also refined Agent 3's self-check heuristic to be
+  asymmetric: it now only downgrades an LLM's "present" verdict to
+  `needs_review` (catching over-claiming), and no longer second-guesses an
+  "absent" verdict, because a blank Net Worth Certificate template still
+  contains the words "Assets"/"Liabilities" in its column headers, so a
+  symmetric keyword check was flagging every blank template as merely
+  "uncertain" instead of cleanly failing it. Prompt documented in
+  `prompts/drafting_agent.md`.
