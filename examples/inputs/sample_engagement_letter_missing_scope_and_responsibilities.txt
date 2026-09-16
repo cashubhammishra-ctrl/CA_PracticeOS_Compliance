@@ -30,7 +30,3 @@ Chartered Accountant
 Accepted for and on behalf of the Client
 Name / Designation:
 Date:
-
-NOTE (test fixture): This draft deliberately omits the Objective/Scope clause,
-the Client Responsibilities clause, and the Limitations clause. It also omits
-a stated deliverable. Agent 3 (Compliance) should flag all of these as missing.

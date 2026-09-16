@@ -1,21 +1,25 @@
 """
 FastAPI backend for the CA PracticeOS Compliance AI Agent Layer.
-Wed 16 Sep: setup. Thu 17 Sep: this file + Agent 1 (Onboarding) endpoints.
+Wed 16 Sep: setup. Thu 17 Sep: Agent 1 (Onboarding). Fri 18 Sep: Agent 3
+(Compliance) - the product's headline / protected-priority feature.
 """
 import csv
 import io
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
+from agents.compliance import CHECKLISTS, ComplianceAgent
 from agents.onboarding import OnboardingAgent
 from schema import CLIENT_MASTER_HEADERS, to_client_master_row
 
 app = FastAPI(title="CA PracticeOS Compliance - AI Agent Layer")
 
 _onboarding_agent: OnboardingAgent | None = None
+_compliance_agent: ComplianceAgent | None = None
 
 
 def get_onboarding_agent() -> OnboardingAgent:
@@ -23,6 +27,13 @@ def get_onboarding_agent() -> OnboardingAgent:
     if _onboarding_agent is None:
         _onboarding_agent = OnboardingAgent()
     return _onboarding_agent
+
+
+def get_compliance_agent() -> ComplianceAgent:
+    global _compliance_agent
+    if _compliance_agent is None:
+        _compliance_agent = ComplianceAgent()
+    return _compliance_agent
 
 
 @app.get("/health")
@@ -85,3 +96,35 @@ async def extract_client_csv(file: UploadFile = File(...)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=client_master_row.csv"},
     )
+
+
+class ComplianceCheckRequest(BaseModel):
+    text: str
+    doc_type: str | None = None
+
+
+@app.get("/api/compliance/document-types")
+def list_document_types():
+    return {"document_types": list(CHECKLISTS.keys())}
+
+
+@app.post("/api/compliance/check")
+def check_compliance(payload: ComplianceCheckRequest):
+    """Agent 3: drafted document text -> pass/fail + missing-clause report."""
+    agent = get_compliance_agent()
+    try:
+        return agent.run(payload.text, payload.doc_type)
+    except Exception as exc:
+        raise HTTPException(500, f"Compliance check failed: {exc}") from exc
+
+
+@app.post("/api/compliance/check-file")
+async def check_compliance_file(file: UploadFile = File(...), doc_type: str | None = Form(None)):
+    """Same as /check, but takes an uploaded .txt/.html draft instead of raw JSON text."""
+    data = await file.read()
+    text = data.decode("utf-8", errors="replace")
+    agent = get_compliance_agent()
+    try:
+        return agent.run(text, doc_type)
+    except Exception as exc:
+        raise HTTPException(500, f"Compliance check failed: {exc}") from exc

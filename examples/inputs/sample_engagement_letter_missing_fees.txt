@@ -47,6 +47,3 @@ Chartered Accountant
 Accepted for and on behalf of the Client
 Name / Designation:
 Date:
-
-NOTE (test fixture): This draft deliberately omits the Fees clause and the
-Limitations clause so Agent 3 (Compliance) should flag both as missing.

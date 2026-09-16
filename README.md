@@ -36,6 +36,19 @@ Or batch-run it against every sample onboarding document:
 python src/run_agent1_on_samples.py
 ```
 
+Try Agent 3 (Compliance) from the CLI against a sample drafted document:
+
+```bash
+python src/agents/compliance.py examples/inputs/sample_engagement_letter_complete.txt
+```
+
+Or batch-run it against all 4 sample drafts (see
+`examples/inputs/compliance_test_expectations.md` for expected results):
+
+```bash
+python src/run_agent3_on_samples.py
+```
+
 ## Status (updated each session)
 
 - **Wed 16 Sep** — Repo initialized, virtualenv + `src/requirements.txt` installed, 8 sample
@@ -61,3 +74,32 @@ python src/run_agent1_on_samples.py
   CSV export endpoint confirmed byte-for-byte compatible with the L1 app's
   "Upload Client Master" template headers. Prompt documented in
   `prompts/onboarding_agent.md`.
+
+- **Fri 18 Sep** — **Agent 3 (Compliance) built and working — protected-priority
+  headline feature.** `src/agents/compliance.py` checks a drafted document's text
+  against a mandatory-clause checklist for its document type (6 document types
+  defined in `CHECKLISTS`, derived from the L1 app's own `generate*()` templates),
+  as a perceive → reason → self-check → act loop:
+  - **Perceive**: strips HTML if present, classifies document type by title-line
+    match (falls back to an LLM classification call for anything unrecognized).
+  - **Reason**: one Claude call checks every mandatory clause at once, returning
+    present/absent + a quoted evidence snippet + reason per clause.
+  - **Self-check**: a keyword heuristic cross-checks each verdict and downgrades it
+    to `needs_review` if the LLM's present/absent call disagrees with what's
+    actually in the text — a genuine second opinion, not just a JSON wrapper
+    around one model call.
+  - **Act**: compiles the overall PASS/FAIL verdict, the missing-clause list, and
+    anything flagged for human review.
+
+  Tested against all 4 sample drafted documents in `examples/inputs/` (see
+  `compliance_test_expectations.md`): the complete engagement letter passes
+  cleanly, and all three deliberately-broken drafts fail with exactly the
+  clauses that were removed called out (fees + limitations; scope +
+  responsibilities + limitations; UDIN + membership number) — zero false
+  positives or false negatives. One tuning fix along the way: the "scope"
+  clause's self-check keyword list included "engage", which false-triggered on
+  every letter's boilerplate opening ("...appointing [firm] to provide
+  professional services...") — narrowed to `scope`/`objective`/`deliverable`.
+  Wired into FastAPI (`/api/compliance/check`, `/api/compliance/check-file`,
+  `/api/compliance/document-types`) and verified live. Prompt documented in
+  `prompts/compliance_agent.md`.

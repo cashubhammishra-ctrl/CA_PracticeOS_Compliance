@@ -34,7 +34,3 @@ Chartered Accountant
 
 Place: New Delhi
 Date: 16/09/2026
-
-NOTE (test fixture): This draft deliberately omits the UDIN field and the
-Membership Number field so Agent 3 (Compliance) should flag both as missing
-per the Net Worth Certificate checklist.

@@ -1,0 +1,51 @@
+{
+  "document_type": "Engagement Letter",
+  "overall": "FAIL",
+  "items": [
+    {
+      "id": "scope",
+      "present": true,
+      "evidence": "The objective of this engagement is to perform a statutory audit and issue the agreed deliverable... Deliverable: Independent Auditor's Report along with audited financial statements.",
+      "reason": "States the objective/scope of the engagement (statutory audit) and specifies the deliverable (audit report and financial statements).",
+      "name": "Objective and Scope",
+      "status": "present"
+    },
+    {
+      "id": "responsibilities",
+      "present": true,
+      "evidence": "The client is responsible for maintaining appropriate books, records and supporting documentation... We will perform the agreed procedures and professional work with due professional care and in accordance with the applicable professional requirements relevant to the assignment.",
+      "reason": "Both client responsibilities (records, information, personnel) and firm responsibilities (professional care, standards) are explicitly stated.",
+      "name": "Client and Firm Responsibilities",
+      "status": "present"
+    },
+    {
+      "id": "fees",
+      "present": false,
+      "evidence": "No mention of fees, fee amount, or fee basis anywhere in the document.",
+      "reason": "The document does not state any professional fee amount or the basis for charging fees.",
+      "name": "Fees",
+      "status": "absent"
+    },
+    {
+      "id": "limitations",
+      "present": false,
+      "evidence": "No clause discussing inherent limitations of audit (e.g., risk of undetected misstatement or fraud) is present.",
+      "reason": "The document lacks any statement about the inherent limitations of the engagement, such as the possibility that fraud or error may not be detected.",
+      "name": "Limitations",
+      "status": "absent"
+    },
+    {
+      "id": "acceptance",
+      "present": true,
+      "evidence": "Please sign and return a copy of this letter as acknowledgement of your understanding and acceptance of the engagement terms.",
+      "reason": "The document explicitly requests the client to sign and return the letter as acceptance, and includes a signature block for the client.",
+      "name": "Acceptance / Signature",
+      "status": "present"
+    }
+  ],
+  "missing": [
+    "Fees",
+    "Limitations"
+  ],
+  "needs_review": []
+}
