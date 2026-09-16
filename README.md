@@ -62,6 +62,41 @@ compliance-checks its own output) against 4 sample prompts:
 python src/run_agent2_then_agent3.py
 ```
 
+Try the Tally connector (falls back to cached sample data unless
+`TALLY_MCP_COMMAND` is configured — see `connectors/connector_setup.md`):
+
+```bash
+python connectors/tally_connector.py
+```
+
+Run the Streamlit demo UI (wires all 3 agents + the Tally connector together):
+
+```bash
+streamlit run src/streamlit_app.py
+```
+
+## Deploying (Render)
+
+The FastAPI backend and the Streamlit demo both deploy from this one repo via
+`render.yaml`. Tally stays in cached-fallback mode on the cloud deployment —
+see `connectors/connector_setup.md` for why that's the correct behavior, not
+a bug.
+
+1. Create a GitHub repo (can be empty) and push this project to it:
+   ```bash
+   git remote add origin <your-github-repo-url>
+   git push -u origin master
+   ```
+2. Create a free account at [render.com](https://render.com) and connect your
+   GitHub account.
+3. In the Render dashboard: **New +** → **Blueprint**, select this repo.
+   Render reads `render.yaml` automatically and proposes two services:
+   `ca-practiceos-backend` (FastAPI) and `ca-practiceos-streamlit` (demo UI).
+4. When prompted, set the `ANTHROPIC_API_KEY` environment variable on **both**
+   services to your real key (never commit it — `render.yaml` intentionally
+   leaves it as `sync: false` so Render asks for it instead of reading `.env`).
+5. Deploy. Once live, put both URLs in `deployment_link.txt`.
+
 ## Status (updated each session)
 
 - **Wed 16 Sep** — Repo initialized, virtualenv + `src/requirements.txt` installed, 8 sample
@@ -149,3 +184,45 @@ python src/run_agent2_then_agent3.py
   symmetric keyword check was flagging every blank template as merely
   "uncertain" instead of cleanly failing it. Prompt documented in
   `prompts/drafting_agent.md`.
+
+- **Sun 20 Sep** — **Tally connector built, all 3 agents + connector wired into
+  one Streamlit UI, Agent 1's CSV import proven live in the L1 app, and full
+  deployment config prepared.**
+
+  - **Researched the real ICAI Tally Prime MCP Server** (not guessed): it's a
+    local Node.js process, distributed as a zip from ai.icai.org, that talks
+    to Tally Prime over its own XML gateway on port 9000 and is launched by
+    the MCP client as a local subprocess over stdio. This means **a
+    cloud-deployed backend genuinely cannot reach a user's local Tally
+    instance** — a real infrastructure constraint, not a gap in the code.
+  - `connectors/base_connector.py` — the exact `BaseConnector` ABC from
+    CLAUDE.md Section 2A. `connectors/tally_connector.py` implements it with a
+    real MCP stdio client (using the official `mcp` Python SDK) for local use,
+    falling back honestly to a cached real data pull
+    (`examples/outputs/sample_tally_pull.json`, refreshed today with live
+    ledger, voucher, and receivables data pulled from a working Tally MCP
+    connection) whenever the live path isn't reachable — every result is
+    tagged `"source": "live"` or `"source": "cached_fallback"`, nothing is
+    silently faked. Full setup/limitation writeup in
+    `connectors/connector_setup.md`. Zoho/SAP remain unbuilt, as scoped.
+  - `src/streamlit_app.py` — one UI with tabs for all 3 agents plus the Tally
+    connector, including a live Agent 2 → Agent 3 tab. Verified working in a
+    real browser session (not just import-checked): every tab exercised live,
+    including the Drafting → Compliance tab reproducing Saturday's Limitations
+    finding and the Tally tab correctly reporting `cached_fallback`.
+  - **Agent 1's CSV import tested live against the actual L1 app**
+    (`CA_PracticeOS_Compliance.html`, served locally and driven in a real
+    browser): generated a fresh CSV from a sample GST certificate, imported it
+    through the app's real "Upload / Update Client Master" flow (dispatched a
+    real `File` via the actual file input, not simulated), and confirmed
+    "RIVERSTONE TRADERS PRIVATE LIMITED" appeared correctly in the Client
+    Master table with the right entity type, PAN, and GSTIN — the L1 → L2
+    bridge this capstone is built around now has an end-to-end proof, not
+    just a schema-matching claim.
+  - **Deployment prepared, not yet live**: `render.yaml` (Blueprint for both
+    the FastAPI backend and the Streamlit demo, `ANTHROPIC_API_KEY` deliberately
+    left as `sync: false` rather than committed) plus step-by-step GitHub +
+    Render setup instructions added to this README. Actually creating the
+    GitHub repo and Render account needs the user's own login, so that's
+    queued for a near-term session once those are set up — `deployment_link.txt`
+    is scaffolded and ready to fill in.

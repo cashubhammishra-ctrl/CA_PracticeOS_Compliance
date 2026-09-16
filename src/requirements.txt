@@ -8,3 +8,4 @@ python-dotenv==1.2.3
 streamlit==1.64.0
 python-multipart==0.0.32
 fpdf2==2.8.8  # dev-only: generates PDF test fixtures in examples/inputs/
+mcp==2.2.0  # TallyConnector's stdio client for the ICAI Tally MCP Server
