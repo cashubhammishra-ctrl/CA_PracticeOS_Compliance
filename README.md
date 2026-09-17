@@ -3,10 +3,13 @@
 AICA Level 2 capstone. See [CLAUDE.md](CLAUDE.md) for the full build plan, session schedule, and priority rules.
 
 **Submission docs:** [project_summary.pdf](project_summary.pdf) (problem, architecture,
-L1→L2 evolution, proof points, learnings) · [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) (talking
-points for the demo video) · `prompts/*.md` (all 3 agent prompts, documented) ·
-[connectors/connector_setup.md](connectors/connector_setup.md) (Tally MCP setup and its
-local-only limitation).
+L1→L2 evolution, proof points, learnings) · [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) (the
+condensed 5–6 min submission-cut talking points) ·
+[FULL_APP_WALKTHROUGH_SCRIPT.md](FULL_APP_WALKTHROUGH_SCRIPT.md) (comprehensive
+section-by-section script covering the entire L1 platform + L2 agent layer, for a
+longer demo or to decide what to cut into the short version) · `prompts/*.md` (all 3
+agent prompts, documented) · [connectors/connector_setup.md](connectors/connector_setup.md)
+(Tally MCP setup and its local-only limitation).
 
 ## Setup
 
