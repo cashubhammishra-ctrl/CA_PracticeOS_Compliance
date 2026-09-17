@@ -269,22 +269,12 @@ nav button, .sidebar button, aside button { cursor:pointer; }
       <h3>Engagement Letter Generator</h3>
       <div class="formgrid">
         <div class="field"><label>Client</label><select id="elClient"></select></div>
-        <div class="field"><label>Professional Fees (₹)</label><input id="repFees" type="number" min="0" step="0.01" oninput="calcGSTTemplate('rep')"></div>
-        <div class="field"><label>GST Applicable</label><select id="repGSTApplicable" onchange="calcGSTTemplate('rep')"><option value="yes">Yes</option><option value="no">No</option></select></div>
-        <div class="field"><label>GST Rate (%)</label><input id="repGSTRate" type="number" value="18" min="0" step="0.01" oninput="calcGSTTemplate('rep')"></div>
-        <div class="field"><label>State of Supply / Place of Supply</label><select id="repGSTPOS" data-state-select onchange="calcGSTTemplate('rep')"></select></div>
-        <div class="field"><label>State where Service/Goods Rendered/Delivered</label><select id="repGSTRendered" data-state-select onchange="calcGSTTemplate('rep')"></select></div>
-        <div class="field"><label>GST Treatment</label><input id="repGSTNature" readonly></div>
-        <div class="field"><label>CGST @ (%) / Amount (₹)</label><input id="repCGST" readonly></div>
-        <div class="field"><label>SGST / UTGST @ (%) / Amount (₹)</label><input id="repSGST" readonly></div>
-        <div class="field"><label>IGST @ (%) / Amount (₹)</label><input id="repIGST" readonly></div>
-        <div class="field"><label>Total GST (₹)</label><input id="repGSTAmount" readonly></div>
-        <div class="field"><label>Total incl. GST (₹)</label><input id="repGSTTotal" readonly></div>
         <div class="field"><label>Assignment</label><select id="elType"><option>Statutory Audit</option><option>Tax Audit</option><option>Internal Audit</option><option>GST / Tax Consultancy</option><option>Accounting Services</option><option>Certification Assignment</option><option>Net Worth Certificate</option><option>Bank Finance / CMA</option><option>Due Diligence</option><option>Other Professional Assignment</option></select></div>
         <div class="field"><label>Financial Year / Period</label><input id="elPeriod" value="FY 2025-26"></div>
         <div class="field"><label>Professional Fees (₹)</label><input id="elFees" type="number" min="0" step="0.01" oninput="calcEngagementFees()"></div>
         <div class="field"><label>GST Applicability</label><select id="elGSTApplicable" onchange="calcEngagementFees()"><option value="yes">Yes</option><option value="no">No</option></select></div>
         <div class="field"><label>GST Rate (%)</label><input id="elGSTRate" type="number" value="18" min="0" max="100" step="0.01" oninput="calcEngagementFees()"></div>
+        <div class="field"><label>Supplier GST Registration State (from Firm Settings)</label><input id="elGSTSupplier" readonly></div>
         <div class="field"><label>GST Treatment</label><input id="elGSTNature" readonly></div>
         <div class="field"><label>CGST @ (%) / Amount (₹)</label><input id="elCGST" readonly></div>
         <div class="field"><label>SGST / UTGST @ (%) / Amount (₹)</label><input id="elSGST" readonly></div>
@@ -313,6 +303,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
         <div class="field"><label>GST Rate (%)</label><input id="nwGSTRate" type="number" value="18" min="0" step="0.01" oninput="calcGSTTemplate('nw')"></div>
         <div class="field"><label>State of Supply / Place of Supply</label><select id="nwGSTPOS" data-state-select onchange="calcGSTTemplate('nw')"></select></div>
         <div class="field"><label>State where Service/Goods Rendered/Delivered</label><select id="nwGSTRendered" data-state-select onchange="calcGSTTemplate('nw')"></select></div>
+        <div class="field"><label>Supplier GST Registration State (from Firm Settings)</label><input id="nwGSTSupplier" readonly></div>
         <div class="field"><label>GST Treatment</label><input id="nwGSTNature" readonly></div>
         <div class="field"><label>CGST @ (%) / Amount (₹)</label><input id="nwCGST" readonly></div>
         <div class="field"><label>SGST / UTGST @ (%) / Amount (₹)</label><input id="nwSGST" readonly></div>
@@ -342,16 +333,15 @@ nav button, .sidebar button, aside button { cursor:pointer; }
   <section id="certificates" class="view">
     <div class="card"><h3>General Certificate Generator</h3>
       <div class="formgrid">
-        <div class="field"><label>Client</label><select id="certClient"></select>
-        <div class="field"><label>State of Supply / Place of Supply</label><select id="certGSTPOS" data-state-select></select></div>
-        <div class="field"><label>State where Service/Goods Rendered/Delivered</label><select id="certGSTRendered" data-state-select></select></div>
-
-</div>
+        <div class="field"><label>Client</label><select id="certClient"></select></div>
         <div class="field"><label>Certificate Type</label><select id="certType"><option>Turnover Certificate</option><option>Capital Contribution Certificate</option><option>Utilisation Certificate</option><option>Solvency Certificate</option><option>Stock Certificate</option><option>Debtors Certificate</option><option>Creditors Certificate</option><option>Financial Position Certificate</option><option>Balance Confirmation</option><option>Other Certificate</option></select></div>
         <div class="field"><label>Certificate No.</label><input id="certNo" placeholder="NSSJ/26-27/CERT/001"></div>
         <div class="field"><label>Professional Fees (₹)</label><input id="certFees" type="number" min="0" step="0.01" oninput="calcCertificateFees()"></div>
         <div class="field"><label>GST Applicability</label><select id="certGSTApplicable" onchange="calcCertificateFees()"><option value="yes">Yes</option><option value="no">No</option></select></div>
         <div class="field"><label>GST Rate (%)</label><input id="certGSTRate" type="number" value="18" min="0" max="100" step="0.01" oninput="calcCertificateFees()"></div>
+        <div class="field"><label>State of Supply / Place of Supply</label><select id="certGSTPOS" data-state-select onchange="calcCertificateFees()"></select></div>
+        <div class="field"><label>State where Service/Goods Rendered/Delivered</label><select id="certGSTRendered" data-state-select onchange="calcCertificateFees()"></select></div>
+        <div class="field"><label>Supplier GST Registration State (from Firm Settings)</label><input id="certGSTSupplier" readonly></div>
         <div class="field"><label>GST Treatment</label><input id="certGSTNature" readonly></div>
         <div class="field"><label>CGST @ (%) / Amount (₹)</label><input id="certCGST" readonly></div>
         <div class="field"><label>SGST / UTGST @ (%) / Amount (₹)</label><input id="certSGST" readonly></div>
@@ -384,20 +374,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
   <section id="workingpaper" class="view">
     <div class="card"><h3>Working Paper Generator</h3><div class="notice"><b>Purpose:</b> Internal evidence trail showing what was checked, what evidence was considered, exceptions and who prepared/reviewed the work. It should be linked to the final report/certificate and supporting files.</div>
       <div class="formgrid">
-        <div class="field"><label>Client</label><select id="wpClient"></select>
-
-</div>
-        <div class="field"><label>Professional Fees (₹)</label><input id="wpFees" type="number" min="0" step="0.01" oninput="calcGSTTemplate('wp')"></div>
-        <div class="field"><label>GST Applicable</label><select id="wpGSTApplicable" onchange="calcGSTTemplate('wp')"><option value="yes">Yes</option><option value="no">No</option></select></div>
-        <div class="field"><label>GST Rate (%)</label><input id="wpGSTRate" type="number" value="18" min="0" step="0.01" oninput="calcGSTTemplate('wp')"></div>
-        <div class="field"><label>State of Supply / Place of Supply</label><select id="wpGSTPOS" data-state-select onchange="calcGSTTemplate('wp')"></select></div>
-        <div class="field"><label>State where Service/Goods Rendered/Delivered</label><select id="wpGSTRendered" data-state-select onchange="calcGSTTemplate('wp')"></select></div>
-        <div class="field"><label>GST Treatment</label><input id="wpGSTNature" readonly></div>
-        <div class="field"><label>CGST @ (%) / Amount (₹)</label><input id="wpCGST" readonly></div>
-        <div class="field"><label>SGST / UTGST @ (%) / Amount (₹)</label><input id="wpSGST" readonly></div>
-        <div class="field"><label>IGST @ (%) / Amount (₹)</label><input id="wpIGST" readonly></div>
-        <div class="field"><label>Total GST (₹)</label><input id="wpGSTAmount" readonly></div>
-        <div class="field"><label>Total incl. GST (₹)</label><input id="wpGSTTotal" readonly></div>
+        <div class="field"><label>Client</label><select id="wpClient"></select></div>
         <div class="field"><label>Workpaper Ref.</label><input id="wpRef" placeholder="NW-WP-001"></div>
         <div class="field"><label>Assignment</label><input id="wpAssignment" value="Net Worth Certificate"></div>
         <div class="field"><label>Prepared By</label><input id="wpPrepared"></div>
@@ -447,6 +424,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
           <div class="field"><label>Advance Received (₹)</label><input id="feeAdvance" type="number" value="0" min="0" step="0.01" oninput="calcFeeModule()"></div>
           <div class="field"><label>Balance Due (₹)</label><input id="feeBalance" readonly></div>          <div class="field"><label>State of Supply / Place of Supply</label><select id="feeGSTPOS" data-state-select onchange="calcFeeModule()"></select></div>
           <div class="field"><label>State where Service/Goods Rendered/Delivered</label><select id="feeGSTRendered" data-state-select onchange="calcFeeModule()"></select></div>
+          <div class="field"><label>Supplier GST Registration State (from Firm Settings)</label><input id="feeGSTSupplier" readonly></div>
           <div class="field"><label>GST Treatment</label><input id="feeGSTNature" readonly></div>
           <div class="field"><label>CGST @ (%) / Amount (₹)</label><input id="feeCGST" readonly></div>
           <div class="field"><label>SGST / UTGST @ (%) / Amount (₹)</label><input id="feeSGST" readonly></div>
@@ -1061,6 +1039,9 @@ function calculateGSTForPrefix(prefix){
 function calcGSTTemplate(prefix){
   const x=calculateGSTForPrefix(prefix);
   const put=(id,val)=>{const e=document.getElementById(id);if(e)e.value=val};
+  const rateEl=document.getElementById(prefix+'GSTRate');
+  if(rateEl)rateEl.disabled=!x.applicable;
+  put(prefix+'GSTSupplier',x.supplier);
   put(prefix+'GSTNature',x.nature);
   put(prefix+'CGST',x.cgst?`${(x.rate/2).toFixed(2)}% / ${x.cgst.toFixed(2)}`:'0.00% / 0.00');
   put(prefix+'SGST',x.sgst?`${(x.rate/2).toFixed(2)}% / ${x.sgst.toFixed(2)}`:'0.00% / 0.00');
