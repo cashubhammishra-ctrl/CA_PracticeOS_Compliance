@@ -196,6 +196,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
       <div class="actions">
         <button class="btn gold" onclick="showView('firmsetup')">Open Firm Setup Wizard</button>
         <button class="btn" onclick="downloadFirmProfileTemplate()">Download Firm Profile Template</button>
+        <button class="btn" onclick="loadSampleData()">🧪 Load Sample Data (Demo)</button>
       </div>
     </div>
     <div class="grid grid4">
@@ -1614,6 +1615,45 @@ function saveSecurity(id){
   audit('Security Holding Saved',name);
   save();
   closeModal();
+}
+function loadSampleData(){
+  if(!confirm('Load sample clients, securities holdings, documents, UDIN and fee records for testing?\n\nThis adds to whatever is already stored locally (existing clients matched by PAN are reused, not duplicated). It does not touch your Firm Settings.'))return;
+
+  function upsertClient(c){
+    let existing=state.clients.find(x=>(x.pan||'').toUpperCase()===c.pan.toUpperCase());
+    if(existing)return existing.id;
+    const rec={id:crypto.randomUUID(),customFields:{},contact:'',mobile:'',email:'',cin:'',sez:false,...c};
+    state.clients.push(rec);
+    return rec.id;
+  }
+  const riverstoneId=upsertClient({name:'Riverstone Traders Private Limited',entity:'Private Limited Company',pan:'ABCDE1234F',gstin:'07ABCDE1234F1Z5',address:'12 Nehru Place, New Delhi',state:'Delhi'});
+  const sharmaId=upsertClient({name:'Sharma Enterprises',entity:'Proprietorship',pan:'PQRST5678K',gstin:'07PQRST5678K1Z2',address:'45 Karol Bagh, New Delhi',state:'Delhi'});
+  const technoId=upsertClient({name:'Techno Traders Ltd',entity:'Private Limited Company',pan:'AABCT1234T',gstin:'07AABCT1234T1Z9',address:'Nehru Place, New Delhi',state:'Delhi'});
+  const priyaId=upsertClient({name:'Priya Venkatesh',entity:'Individual',pan:'EFGHI5678M',gstin:'',address:'Anna Nagar, Chennai',state:'Tamil Nadu'});
+
+  function upsertSecurity(s){
+    const exists=state.securities.some(x=>x.isin===s.isin && x.clientId===s.clientId);
+    if(exists)return;
+    state.securities.push({id:crypto.randomUUID(),evidence:'Demat statement',...s});
+  }
+  upsertSecurity({clientId:riverstoneId,clientName:clientName(riverstoneId),name:'Infosys Ltd',isin:'INE009A01021',type:'Equity',quantity:'100',value:285000});
+  upsertSecurity({clientId:riverstoneId,clientName:clientName(riverstoneId),name:'HDFC Flexicap Fund',isin:'INF179K01158',type:'Mutual Fund',quantity:'500',value:610000,evidence:'CAMS statement'});
+  upsertSecurity({clientId:technoId,clientName:clientName(technoId),name:'Tata Consultancy Services',isin:'INE467B01029',type:'Equity',quantity:'50',value:750000});
+
+  addDoc('Engagement Letter',riverstoneId,'Draft','EL-2026-001');
+  addDoc('Net Worth Certificate',priyaId,'Submitted for Approval','NSSJ/NW/2026/001');
+  addDoc('Turnover Certificate',sharmaId,'Approved','NSSJ/CERT/2026/001');
+  addDoc('Engagement Letter',technoId,'Issued','EL-2026-002');
+
+  state.udin.push({id:crypto.randomUUID(),date:today(),clientId:sharmaId,document:'Turnover Certificate',cert:'NSSJ/CERT/2026/001',udin:'',status:'Pending'});
+  state.udin.push({id:crypto.randomUUID(),date:today(),clientId:technoId,document:'Engagement Letter',cert:'EL-2026-002',udin:'26AABCT1234T00001234',status:'Verified'});
+
+  state.fees.push({id:crypto.randomUUID(),date:today(),clientId:riverstoneId,service:'Tax Audit AY 2025-26',taxable:50000,gst:9000,total:59000,advance:20000,balance:39000,gstRate:18});
+  state.fees.push({id:crypto.randomUUID(),date:today(),clientId:sharmaId,service:'GST Return Filing',taxable:15000,gst:2700,total:17700,advance:0,balance:17700,gstRate:18});
+
+  audit('Sample Data Loaded','4 clients, 3 securities, 4 documents, 2 UDIN, 2 fee records');
+  save();
+  alert('Sample data loaded: 4 clients, 3 securities holdings, 4 documents (one per status), 2 UDIN records, 2 fee records.\n\nCheck Client Master, Securities / ISIN Master, Document Register, UDIN Register and Professional Fees & GST.');
 }
 function loadSecuritiesForNW(){
   const clientId=document.getElementById('nwClient').value;
