@@ -1,8 +1,10 @@
 """
 Streamlit demo UI wiring all 3 agents + the Tally connector into one place.
-Calls the agent classes directly in-process (no separate FastAPI server needed
-for this demo UI, though src/main.py exposes the same functionality over HTTP
-for the deployed backend).
+Styled to match the L1 app's look (dark navy sidebar nav, card panels, gold
+accents) rather than default Streamlit widgets. Calls the agent classes
+directly in-process (no separate FastAPI server needed for this demo UI,
+though src/main.py exposes the same functionality over HTTP for the deployed
+backend).
 """
 import csv
 import io
@@ -26,71 +28,108 @@ st.set_page_config(
     layout="wide",
 )
 
-# ---- Branding: match the L1 app's navy/gold identity ----------------------
+# ---- Branding: match the L1 app's navy/gold identity, sidebar nav ---------
 st.markdown(
     """
     <style>
     :root {
         --navy: #0b1f3a; --blue: #123f73; --gold: #c9a227; --gold2: #e8d08a;
-        --green: #16845b; --red: #c62828; --orange: #b76e00;
+        --green: #16845b; --red: #c62828; --orange: #b76e00; --bg: #f4f7fb;
     }
-    .block-container { padding-top: 1.5rem; max-width: 1100px; }
-    .hero {
-        background: linear-gradient(120deg, var(--navy), var(--blue));
-        color: #fff; padding: 26px 32px; border-radius: 14px;
-        margin-bottom: 22px; box-shadow: 0 4px 18px rgba(11,31,58,.18);
+    .stApp { background: var(--bg); }
+    .block-container { padding-top: 2rem; max-width: 1150px; }
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, var(--navy), #0d2547);
     }
-    .hero h1 { margin: 0; font-size: 26px; font-weight: 800; }
-    .hero .gold { color: var(--gold2); }
-    .hero p { margin: 8px 0 0; color: #cfdcec; font-size: 14px; }
-    .headline-chip {
-        display: inline-block; margin-top: 10px; padding: 5px 12px;
-        border-radius: 999px; background: rgba(232,208,138,.18);
-        border: 1px solid var(--gold2); color: var(--gold2);
-        font-size: 12px; font-weight: 700; letter-spacing: .3px;
+    section[data-testid="stSidebar"] * { color: #d8e3ef !important; }
+    section[data-testid="stSidebar"] .stButton button {
+        background: transparent; border: 1px solid transparent; text-align: left;
+        width: 100%; padding: 10px 14px; border-radius: 9px; font-size: 14px;
+        font-weight: 600; justify-content: flex-start;
     }
-    div[data-testid="stTabs"] button[role="tab"] {
-        font-weight: 700; font-size: 14.5px; padding: 10px 16px;
+    section[data-testid="stSidebar"] .stButton button:hover {
+        background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.15);
     }
-    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: var(--blue); border-bottom-color: var(--gold) !important;
+    section[data-testid="stSidebar"] .stButton button[kind="primary"] {
+        background: var(--gold) !important; color: #1d2939 !important;
+        border-color: var(--gold) !important;
     }
+    section[data-testid="stSidebar"] .stButton button[kind="primary"] * { color: #1d2939 !important; }
+    .brand-block { padding: 4px 6px 18px; border-bottom: 1px solid rgba(255,255,255,.14); margin-bottom: 14px; }
+    .brand-block h1 { font-size: 20px; margin: 0; color: #fff !important; font-weight: 800; }
+    .brand-block .gold { color: var(--gold2) !important; }
+    .brand-block p { font-size: 11.5px; color: #9fb2c8 !important; margin: 6px 0 0; }
+
+    /* Page header */
+    .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 18px; }
+    .page-header h2 { margin:0; font-size: 24px; color: var(--navy); }
+    .page-header .sub { color:#667085; font-size: 13px; margin-top: 4px; }
+
+    /* Cards */
     .card {
         background: #fff; border: 1px solid #d9e2ec; border-radius: 12px;
-        padding: 18px 20px; box-shadow: 0 2px 8px rgba(16,24,40,.04);
-        margin-bottom: 14px;
+        padding: 18px 20px; box-shadow: 0 2px 8px rgba(16,24,40,.04); margin-bottom: 14px;
     }
-    .badge {
-        display: inline-block; padding: 5px 14px; border-radius: 999px;
-        font-weight: 800; font-size: 14px; letter-spacing: .2px;
+    .kpi { background:#fff; border:1px solid #d9e2ec; border-radius:12px; padding:14px 16px; }
+    .kpi .label { font-size: 12px; color:#667085; }
+    .kpi .value { font-size: 26px; font-weight: 800; color: var(--blue); margin-top: 2px; }
+
+    .notice {
+        border-left: 4px solid var(--gold); background: #fffaf0; padding: 12px 16px;
+        border-radius: 6px; font-size: 13px; color: #6b4e00; margin: 10px 0 18px;
     }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 5px 14px; border-radius: 999px; font-weight: 800; font-size: 14px; }
     .badge.green { background: #e7f6ef; color: var(--green); }
     .badge.red { background: #fdecec; color: var(--red); }
-    .badge.blue { background: #e9f1fb; color: var(--blue); }
-    .source-tag {
-        display: inline-block; padding: 3px 10px; border-radius: 999px;
-        font-size: 12px; font-weight: 700; background: #eef4fb; color: var(--blue);
-    }
-    .clause-row {
-        border-bottom: 1px solid #edf1f5; padding: 10px 2px; font-size: 14px;
-    }
+    .source-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #eef4fb; color: var(--blue); }
+
+    div[data-testid="stMetricValue"] { color: var(--blue); }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-st.markdown(
-    """
-    <div class="hero">
-      <h1>CA PracticeOS <span class="gold">Compliance</span> — AI Agent Layer</h1>
-      <p>AICA Level 2 capstone · onboarding, drafting and compliance agents wired
-      together, plus a Tally connector — built on top of the CA PracticeOS
-      Compliance L1 document engine.</p>
-      <span class="headline-chip">★ Agent 3 (Compliance) is the headline feature</span>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+NAV_ITEMS = [
+    ("dashboard", "▦  Dashboard"),
+    ("onboarding", "🧾  Agent 1 · Onboarding"),
+    ("compliance", "✅  Agent 3 · Compliance"),
+    ("pipeline", "🔗  Agent 2 → 3 · Drafting"),
+    ("tally", "📊  Tally Connector"),
+]
+
+if "view" not in st.session_state:
+    st.session_state.view = "dashboard"
+
+with st.sidebar:
+    st.markdown(
+        """
+        <div class="brand-block">
+          <h1>CA PracticeOS <span class="gold">Compliance</span></h1>
+          <p>AI Agent Layer &middot; AICA Level 2 Capstone</p>
+          <p>NSSJ &amp; Co. &middot; CA Shubham Mishra</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    for key, label in NAV_ITEMS:
+        is_active = st.session_state.view == key
+        if st.button(label, key=f"nav_{key}", type="primary" if is_active else "secondary", use_container_width=True):
+            st.session_state.view = key
+            st.rerun()
+
+view = st.session_state.view
+
+
+def page_header(title: str, subtitle: str):
+    st.markdown(
+        f'<div class="page-header"><div><h2>{title}</h2>'
+        f'<div class="sub">{subtitle}</div></div></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def status_badge(overall: str) -> str:
@@ -121,17 +160,52 @@ def get_tally_connector():
     return connector
 
 
-tab1, tab2, tab3, tab4 = st.tabs([
-    "🧾  Agent 1 · Onboarding",
-    "✅  Agent 3 · Compliance",
-    "🔗  Agent 2 → 3 · Drafting + Compliance",
-    "📊  Tally Connector",
-])
+# ---- Dashboard --------------------------------------------------------------
+if view == "dashboard":
+    page_header("Dashboard", "AI Agent Layer &middot; built on top of the CA PracticeOS Compliance L1 document engine")
+
+    st.markdown(
+        """
+        <div class="notice">
+        ★ <b>Agent 3 (Compliance) is the headline feature.</b> It's the product's
+        actual differentiator — a genuine multi-step, self-checking workflow that
+        validates a drafted document, not one-shot generation.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    cols = st.columns(4)
+    kpis = [("Agents", "3"), ("Document Types", "6"), ("Connectors", "1 (Tally)"), ("Headline", "Compliance")]
+    for c, (label, value) in zip(cols, kpis):
+        c.markdown(f'<div class="kpi"><div class="label">{label}</div><div class="value">{value}</div></div>', unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("**Quick jump**")
+    qcols = st.columns(4)
+    quick = [
+        ("onboarding", "🧾 Onboarding"),
+        ("compliance", "✅ Compliance"),
+        ("pipeline", "🔗 Drafting + Compliance"),
+        ("tally", "📊 Tally Connector"),
+    ]
+    for c, (key, label) in zip(qcols, quick):
+        if c.button(label, use_container_width=True, key=f"qc_{key}"):
+            st.session_state.view = key
+            st.rerun()
+
+    with st.container(border=True):
+        st.markdown("**What each piece does**")
+        st.markdown(
+            "- **Agent 1 (Onboarding)** — photo/PDF of a PAN or GST certificate → a validated Client Master row, ready to import into the L1 app.\n"
+            "- **Agent 3 (Compliance)** — checks a drafted document against its mandatory-clause checklist; pass/fail with exactly what's missing.\n"
+            "- **Agent 2 (Drafting)** — one plain-English line → a filled draft, fed straight into Agent 3.\n"
+            "- **Tally Connector** — pulls client/ledger/invoice data via ICAI's Tally Prime MCP Server, with an honest cached fallback when Tally isn't reachable."
+        )
 
 # ---- Agent 1: Onboarding ---------------------------------------------------
-with tab1:
-    st.subheader("Client Onboarding")
-    st.caption("Photo or PDF of a PAN card / GST certificate → a validated Client Master row.")
+elif view == "onboarding":
+    page_header("Client Onboarding", "Photo or PDF of a PAN card / GST certificate &rarr; a validated Client Master row")
 
     with st.container(border=True):
         uploaded = st.file_uploader("Upload a PAN card or GST certificate", type=["png", "jpg", "jpeg", "pdf"])
@@ -178,9 +252,8 @@ with tab1:
         )
 
 # ---- Agent 3: Compliance ---------------------------------------------------
-with tab2:
-    st.subheader("Compliance Checklist")
-    st.caption("The product's headline feature — checks a drafted document against its mandatory-clause checklist.")
+elif view == "compliance":
+    page_header("Compliance Checklist", "The product's headline feature &mdash; checks a drafted document against its mandatory-clause checklist")
 
     with st.container(border=True):
         doc_type = st.selectbox("Document type", ["Auto-detect"] + list(CHECKLISTS.keys()))
@@ -210,9 +283,8 @@ with tab2:
                         st.write(f"**Evidence:** _{item['evidence']}_")
 
 # ---- Agent 2 -> Agent 3 pipeline -------------------------------------------
-with tab3:
-    st.subheader("Drafting → Compliance")
-    st.caption("One plain-English instruction becomes a draft, which is immediately compliance-checked — no manual step in between.")
+elif view == "pipeline":
+    page_header("Drafting → Compliance", "One plain-English instruction becomes a draft, immediately compliance-checked &mdash; no manual step in between")
 
     with st.container(border=True):
         instruction = st.text_input(
@@ -242,15 +314,15 @@ with tab3:
                 st.success("All mandatory clauses present.")
 
 # ---- Tally connector --------------------------------------------------------
-with tab4:
-    st.subheader("Tally Connector")
-    st.caption(
-        "Live when TALLY_MCP_COMMAND is configured and this app runs on the same "
-        "machine as Tally Prime; otherwise falls back to a cached real data pull "
-        "(see connectors/connector_setup.md for why)."
+elif view == "tally":
+    page_header("Tally Connector", "Live when TALLY_MCP_COMMAND is configured and this app runs on the same machine as Tally Prime")
+    st.markdown(
+        '<div class="notice">Otherwise falls back to a cached real data pull — see '
+        '<code>connectors/connector_setup.md</code> for why that\'s the correct behavior, not a bug.</div>',
+        unsafe_allow_html=True,
     )
-    connector = get_tally_connector()
 
+    connector = get_tally_connector()
     col1, col2 = st.columns(2)
     with col1:
         with st.container(border=True):
