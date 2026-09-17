@@ -153,6 +153,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
     <div class="section">Workspace</div>
     <button data-view="dashboard" class="active">▦ Dashboard</button>
     <button data-view="clients">◉ Client Master</button>
+    <button data-view="securities">◆ Securities / ISIN Master</button>
     <button data-view="documents">▤ Document Register</button>
     <div class="section">Documents</div>
     <button data-view="engagement">✎ Engagement Letter</button>
@@ -243,6 +244,20 @@ nav button, .sidebar button, aside button { cursor:pointer; }
     </div>
   </section>
 
+  <section id="securities" class="view">
+    <div class="card">
+      <div class="toolbar">
+<div class="field" style="flex:1"><label>Search holding</label><input id="securitySearch" oninput="renderSecurities()" placeholder="Client / Security name / ISIN"></div>
+<button class="btn" onclick="downloadSecuritiesTemplate()">Download Template</button>
+<button class="btn" onclick="document.getElementById('securityUpload').click()">Upload / Update Securities Master</button>
+<input id="securityUpload" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importSecurities(event)">
+<button class="btn primary" onclick="openSecurity()">+ Add Holding</button>
+</div>
+<div class="notice">Upload an Excel/CSV securities / ISIN master in bulk (shares, mutual funds, bonds, debentures). Holdings are matched to a client primarily by PAN, then Client Name — clients not already in the Client Master will need to be added there first, or the holding is kept unlinked until then. Use this to auto-fill the Investments / Shares section of a Net Worth Certificate.</div>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Security Name</th><th>ISIN</th><th>Type</th><th>Quantity</th><th>Value (₹)</th><th>Actions</th></tr></thead><tbody id="securityRows"></tbody></table></div>
+    </div>
+  </section>
+
   <section id="documents" class="view">
     <div class="card"><div class="toolbar"><div class="field"><label>Filter</label><select id="docFilter" onchange="renderDocs()"><option value="">All</option><option>Draft</option><option>Final</option><option>UDIN Pending</option><option>Issued</option></select></div><button class="btn" onclick="clearDocs()">Clear Register</button></div>
     <div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Client</th><th>Document</th><th>Reference</th><th>Status</th><th>Action</th></tr></thead><tbody id="docRows"></tbody></table></div></div>
@@ -310,6 +325,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
       <h3 style="margin-top:18px">Assets</h3>
       <div class="tablewrap"><table class="table"><thead><tr><th>Particular</th><th>Evidence / Basis</th><th style="width:180px">Amount (₹)</th><th></th></tr></thead><tbody id="assetRows"></tbody></table></div>
       <button class="btn small" onclick="addNWRow('asset')">+ Add Asset</button>
+      <button class="btn small" onclick="loadSecuritiesForNW()">📥 Load from Securities / ISIN Master</button>
       <h3 style="margin-top:18px">Liabilities</h3>
       <div class="tablewrap"><table class="table"><thead><tr><th>Particular</th><th>Evidence / Basis</th><th style="width:180px">Amount (₹)</th><th></th></tr></thead><tbody id="liabilityRows"></tbody></table></div>
       <button class="btn small" onclick="addNWRow('liability')">+ Add Liability</button>
@@ -778,10 +794,11 @@ nav button, .sidebar button, aside button { cursor:pointer; }
 const KEY='caPracticeOS_v1';
 let state=JSON.parse(localStorage.getItem(KEY)||'null')||{
   settings:{firm:'NSSJ & Co.',ca:'CA Shubham Mishra',membership:'',frn:'',address:'',email:'',phone:'',website:'',gstState:'Delhi',appBaseUrl:'',footer:'This document is prepared based on information and representations provided to us and should be read with the applicable engagement terms and professional requirements.'},
-  clients:[],docs:[],udin:[],fees:[],fileVersions:[],vaultFiles:[],contracts:[],signatures:[],integrations:{onedrive:{connected:false,folder:'',account:''},computex:{enabled:false,mode:'Import/Export'},zoho:{enabled:false,mode:'API'}},gstRates:[],approvalLog:[],audit:[],security:{tenantId:'',user:'',role:'Partner / Admin',lockMinutes:10,mfaPolicy:'Mandatory - Authenticator / TOTP'},dpdp:{inventory:[],requests:[],incidents:[]}};
+  clients:[],docs:[],udin:[],fees:[],securities:[],fileVersions:[],vaultFiles:[],contracts:[],signatures:[],integrations:{onedrive:{connected:false,folder:'',account:''},computex:{enabled:false,mode:'Import/Export'},zoho:{enabled:false,mode:'API'}},gstRates:[],approvalLog:[],audit:[],security:{tenantId:'',user:'',role:'Partner / Admin',lockMinutes:10,mfaPolicy:'Mandatory - Authenticator / TOTP'},dpdp:{inventory:[],requests:[],incidents:[]}};
 state.settings.website=state.settings.website||'';
 state.audit=Array.isArray(state.audit)?state.audit:[];
 state.fees=Array.isArray(state.fees)?state.fees:[];
+state.securities=Array.isArray(state.securities)?state.securities:[];
 state.security=state.security||{tenantId:'',user:'',role:'Partner / Admin',lockMinutes:10,mfaPolicy:'Mandatory - Authenticator / TOTP'};
 state.security.users=Array.isArray(state.security.users)?state.security.users:[];
 state.security.preparerEmail=state.security.preparerEmail||'';state.security.approver=state.security.approver||'';state.security.approverEmail=state.security.approverEmail||'';
@@ -797,6 +814,8 @@ state.approvalLog=Array.isArray(state.approvalLog)?state.approvalLog:[];
 let currentDocId=null;
 let pendingClientImportRows=null;
 let pendingClientImportFile='';
+let pendingSecurityImportRows=null;
+let pendingSecurityImportFile='';
 let currentApprovalDocId=null;
 
 function audit(action,detail=''){
@@ -804,13 +823,13 @@ function audit(action,detail=''){
   state.audit.push({ts:new Date().toISOString(),user:state.security?.user||state.settings?.ca||'User',role:state.security?.role||'Partner / Admin',action:action+(detail?' — '+detail:''),tenant:state.security?.tenantId||'LOCAL'});
   if(state.audit.length>1000)state.audit=state.audit.slice(-1000);
 }
-function save(){localStorage.setItem(KEY,JSON.stringify(state));updateDashboard();renderClients();renderDocs();renderUDIN();renderFees();populateClients();renderRecent();renderFirmAccessControl();}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));updateDashboard();renderClients();renderSecurities();renderDocs();renderUDIN();renderFees();populateClients();renderRecent();renderFirmAccessControl();}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function money(n){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(Number(n)||0)}
 function numWords(n){n=Math.round(Number(n)||0); if(n===0)return 'Zero Rupees Only'; const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];function two(x){if(x<20)return ones[x];return tens[Math.floor(x/10)]+(x%10?' '+ones[x%10]:'')}function part(x){let a=[];if(x>=100){a.push(ones[Math.floor(x/100)]+' Hundred');x%=100}if(x)a.push(two(x));return a.join(' ')}let out=[];let cr=Math.floor(n/10000000);n%=10000000;let lk=Math.floor(n/100000);n%=100000;let th=Math.floor(n/1000);n%=1000;if(cr)out.push(part(cr)+' Crore');if(lk)out.push(part(lk)+' Lakh');if(th)out.push(part(th)+' Thousand');if(n)out.push(part(n));return out.join(' ')+' Rupees Only'}
 function today(){return new Date().toISOString().slice(0,10)}
 function clientName(id){let c=state.clients.find(x=>x.id===id);return c?c.name:'—'}
-function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',clients:'Client Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); window.scrollTo(0,0)}
+function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); window.scrollTo(0,0)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{showView(b.dataset.view);closeMobileNav()}));
 
 // ---- Mobile off-canvas navigation ----
@@ -1400,6 +1419,208 @@ function commitPendingClientImport(){
   closeModal();
 
   alert(`Client Master import completed.\n\nFile: ${file}\nAdded: ${added}\nUpdated: ${updated}\nSkipped: ${skipped}${issues.length?'\n\nIssues:\n'+issues.slice(0,10).join('\n'):''}`);
+}
+
+// ---- Securities / ISIN Master ----
+function findClientByPanOrName(pan,name){
+  const keyPan=(pan||'').trim().toUpperCase();
+  const keyName=(name||'').trim().toLowerCase();
+  let c=null;
+  if(keyPan) c=state.clients.find(x=>(x.pan||'').trim().toUpperCase()===keyPan);
+  if(!c && keyName) c=state.clients.find(x=>(x.name||'').trim().toLowerCase()===keyName);
+  return c||null;
+}
+function mapSecurityImportRow(row){
+  const m={};
+  Object.keys(row).forEach(k=>{m[normalizeHeader(k)]=row[k]});
+  const pick=(...keys)=>{
+    for(const k of keys){
+      const nk=normalizeHeader(k);
+      if(m[nk]!==undefined && String(m[nk]).trim()!=='') return String(m[nk]).trim();
+    }
+    return '';
+  };
+  const clientPan=pick('Client PAN','PAN','Client PAN No').toUpperCase();
+  const clientName=pick('Client Name','Client','Name');
+  const client=findClientByPanOrName(clientPan,clientName);
+  return {
+    clientPan,
+    clientName,
+    clientId:client?client.id:'',
+    name:pick('Security Name','Security','Scrip Name','Fund Name','Name'),
+    isin:pick('ISIN','ISIN Code','ISIN No').toUpperCase(),
+    type:pick('Type','Security Type','Instrument Type')||'Equity',
+    quantity:pick('Quantity','Qty','Units'),
+    value:pick('Current Value','Market Value','Value (Rs)','Value','Amount'),
+    evidence:pick('Basis / Evidence','Evidence','Basis')||'Demat / statement'
+  };
+}
+function downloadSecuritiesTemplate(){
+  const headers=['Client PAN','Client Name','Security Name','ISIN','Type','Quantity','Current Value','Basis / Evidence'];
+  const sample=['ABCDE1234F','ABC PRIVATE LIMITED','Infosys Ltd','INE009A01021','Equity','100','285000','Demat statement'];
+  const csv=[headers,sample].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='CA_PracticeOS_Securities_ISIN_Template.csv';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+function importSecurities(event){
+  const file=event.target.files?.[0];
+  if(!file)return;
+  const ext=file.name.toLowerCase().split('.').pop().trim();
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let rawRows=[];
+      if(ext==='csv'){
+        rawRows=parseCSV(e.target.result);
+      }else{
+        if(typeof XLSX==='undefined'){
+          throw new Error('Excel import library could not be loaded. Please use CSV or ensure the Excel library is available.');
+        }
+        const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        rawRows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+      }
+      if(!rawRows.length){
+        throw new Error('No data rows found. Check that the CSV contains a header row and at least one holding row.');
+      }
+      const mapped=rawRows.map(mapSecurityImportRow).filter(x=>x.name);
+      if(!mapped.length){
+        throw new Error('No usable holdings found. Security Name is required.');
+      }
+      pendingSecurityImportRows=mapped;
+      pendingSecurityImportFile=file.name;
+      showSecurityImportPreview(mapped,file.name);
+    }catch(err){
+      alert('Could not import the file.\n\n'+err.message);
+    }finally{
+      event.target.value='';
+    }
+  };
+  if(ext==='csv')reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+function showSecurityImportPreview(rows,fileName){
+  document.getElementById('modalTitle').textContent='Securities / ISIN Import Preview';
+  const limited=rows.slice(0,100);
+  const unlinked=rows.filter(r=>!r.clientId).length;
+  document.getElementById('modalBody').innerHTML=`
+    <p><b>File:</b> ${esc(fileName)} &nbsp; <b>Rows found:</b> ${rows.length}</p>
+    <div class="notice">
+      Holdings are matched to a client by PAN, then Client Name. Matching priority: ISIN + Client → update; otherwise a new holding is added.
+      ${unlinked?`<br><b>${unlinked} row(s)</b> did not match an existing client and will be kept unlinked until that client is added to the Client Master.`:''}
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr>
+      <th>Client</th><th>Security Name</th><th>ISIN</th><th>Type</th><th>Quantity</th><th>Value (₹)</th>
+    </tr></thead><tbody>
+      ${limited.map(s=>`<tr>
+        <td>${esc(s.clientId?clientName(s.clientId):(s.clientName||'Unlinked'))}</td><td>${esc(s.name)}</td><td>${esc(s.isin)}</td>
+        <td>${esc(s.type)}</td><td>${esc(s.quantity)}</td><td>${money(s.value)}</td>
+      </tr>`).join('')}
+    </tbody></table></div>
+    <div class="actions" style="margin-top:15px">
+      <button class="btn gold" onclick="commitPendingSecurityImport()">Import / Update ${rows.length} Holding${rows.length===1?'':'s'}</button>
+      <button class="btn" onclick="cancelSecurityImport()">Cancel</button>
+    </div>`;
+  openModal();
+}
+function cancelSecurityImport(){
+  pendingSecurityImportRows=null;
+  pendingSecurityImportFile='';
+  closeModal();
+}
+function commitPendingSecurityImport(){
+  const rows=pendingSecurityImportRows||[];
+  if(!rows.length){
+    alert('No pending securities import found. Please select the file again.');
+    return;
+  }
+  let added=0,updated=0;
+  rows.forEach(r=>{
+    const keyIsin=(r.isin||'').trim().toUpperCase();
+    let found=-1;
+    if(keyIsin && r.clientId) found=state.securities.findIndex(s=>(s.isin||'').trim().toUpperCase()===keyIsin && s.clientId===r.clientId);
+    if(found>=0){
+      state.securities[found]={...state.securities[found],...r,id:state.securities[found].id};
+      updated++;
+    }else{
+      state.securities.push({...r,id:crypto.randomUUID()});
+      added++;
+    }
+  });
+  audit('Securities Master Imported / Updated',`${pendingSecurityImportFile} | Added ${added} | Updated ${updated}`);
+  save();
+  const file=pendingSecurityImportFile;
+  pendingSecurityImportRows=null;
+  pendingSecurityImportFile='';
+  closeModal();
+  alert(`Securities / ISIN import completed.\n\nFile: ${file}\nAdded: ${added}\nUpdated: ${updated}`);
+}
+function renderSecurities(){
+  const q=(document.getElementById('securitySearch')?.value||'').toLowerCase();
+  const rows=(state.securities||[]).filter(s=>{
+    const label=(s.clientId?clientName(s.clientId):(s.clientName||''))+' '+s.name+' '+s.isin;
+    return label.toLowerCase().includes(q);
+  });
+  const el=document.getElementById('securityRows');
+  if(!el)return;
+  el.innerHTML=rows.length?rows.map(s=>`<tr>
+    <td>${esc(s.clientId?clientName(s.clientId):(s.clientName||'Unlinked'))}</td>
+    <td>${esc(s.name)}</td><td>${esc(s.isin)}</td><td>${esc(s.type)}</td><td>${esc(s.quantity)}</td><td>${money(s.value)}</td>
+    <td><button class="btn small" onclick="openSecurity('${s.id}')">Edit</button> <button class="btn small" onclick="deleteSecurity('${s.id}')">Delete</button></td>
+  </tr>`).join(''):'<tr><td colspan="7" class="empty">No securities holdings found. Upload a Securities / ISIN Master or add one manually.</td></tr>';
+}
+function deleteSecurity(id){
+  if(!confirm('Delete this holding?'))return;
+  state.securities=state.securities.filter(s=>s.id!==id);
+  audit('Security Holding Deleted',id);
+  save();
+}
+function openSecurity(id){
+  const s=state.securities.find(x=>x.id===id)||{id:'',clientId:'',name:'',isin:'',type:'Equity',quantity:'',value:'',evidence:'Demat / statement'};
+  document.getElementById('modalTitle').textContent=id?'Edit Holding':'Add Holding';
+  document.getElementById('modalBody').innerHTML=`<div class="formgrid">
+    <div class="field"><label>Client</label><select id="secClient">${state.clients.map(c=>`<option value="${c.id}" ${s.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>Security Name</label><input id="secName" value="${esc(s.name)}"></div>
+    <div class="field"><label>ISIN</label><input id="secISIN" value="${esc(s.isin)}" placeholder="INE009A01021"></div>
+    <div class="field"><label>Type</label><select id="secType">${['Equity','Mutual Fund','Bond','Debenture','Other'].map(x=>`<option ${s.type===x?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="field"><label>Quantity</label><input id="secQty" value="${esc(s.quantity)}"></div>
+    <div class="field"><label>Current Value (₹)</label><input id="secValue" type="number" min="0" step="0.01" value="${s.value||''}"></div>
+    <div class="field full"><label>Basis / Evidence</label><input id="secEvidence" value="${esc(s.evidence)}"></div>
+  </div>
+  <div class="actions" style="margin-top:15px"><button class="btn gold" onclick="saveSecurity('${id||''}')">Save Holding</button><button class="btn" onclick="closeModal()">Cancel</button></div>`;
+  openModal();
+}
+function saveSecurity(id){
+  const clientId=document.getElementById('secClient').value;
+  const name=document.getElementById('secName').value.trim();
+  if(!name){alert('Security Name is required.');return}
+  const rec={
+    clientId,
+    clientName:clientId?clientName(clientId):'',
+    name,
+    isin:document.getElementById('secISIN').value.trim().toUpperCase(),
+    type:document.getElementById('secType').value,
+    quantity:document.getElementById('secQty').value.trim(),
+    value:document.getElementById('secValue').value,
+    evidence:document.getElementById('secEvidence').value.trim()
+  };
+  const idx=state.securities.findIndex(s=>s.id===id);
+  if(idx>=0){state.securities[idx]={...state.securities[idx],...rec}}
+  else{state.securities.push({...rec,id:crypto.randomUUID()})}
+  audit('Security Holding Saved',name);
+  save();
+  closeModal();
+}
+function loadSecuritiesForNW(){
+  const clientId=document.getElementById('nwClient').value;
+  if(!clientId){alert('Select a client first.');return}
+  const holdings=(state.securities||[]).filter(s=>s.clientId===clientId);
+  if(!holdings.length){alert('No securities holdings found for this client in the Securities / ISIN Master.');return}
+  holdings.forEach(s=>addNWRow('asset',s.name+(s.isin?' ('+s.isin+')':''),s.evidence||'Securities Master / Demat statement',s.value||0));
 }
 
 function saveWorkflowAccess(){

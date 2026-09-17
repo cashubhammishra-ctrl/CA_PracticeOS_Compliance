@@ -314,3 +314,24 @@ a bug.
     in their own terminal (this sandboxed tool can't complete an interactive
     OAuth prompt); after that one-time login, subsequent pushes from this
     session worked non-interactively using the cached credential.
+  - **Streamlit UI redesigned a second time** after seeing the actual L1 app's
+    dashboard: replaced the top-tab layout with a dark navy **sidebar nav**
+    matching L1's pattern exactly (brand block, gold active-item highlight,
+    icon-prefixed nav buttons), added a **Dashboard landing view** with KPI
+    cards and "Quick jump" buttons mirroring L1's Dashboard/Quick Create
+    layout. Verified live on Render.
+  - **L1 app enhancement (out of L2 capstone scope, done at user's request):**
+    added a **Securities / ISIN Master** to `CA_PracticeOS_Compliance.html` —
+    a new sidebar section for bulk-uploading share/mutual-fund/bond holdings
+    (Client PAN, Security Name, ISIN, Type, Quantity, Current Value), matched
+    to an existing Client Master record by PAN then name, following the exact
+    same upload/preview/commit pattern as the existing Client Master import
+    (`mapSecurityImportRow`, `showSecurityImportPreview`,
+    `commitPendingSecurityImport`, `renderSecurities`). Added a
+    "Load from Securities / ISIN Master" button inside the Net Worth
+    Certificate generator that pulls a client's holdings straight into the
+    Assets table. Tested end to end in a live browser session: imported a
+    client, uploaded a securities CSV, confirmed correct PAN-matching and
+    Indian-currency formatting in the preview, committed the import, and
+    confirmed `calcNW()` correctly summed the pulled-in holdings. Zero console
+    errors throughout.
