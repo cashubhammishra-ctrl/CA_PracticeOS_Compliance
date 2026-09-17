@@ -290,3 +290,27 @@ a bug.
     `connectors/connector_setup.md` are already complete and current from
     prior sessions — no changes needed there.
   - This README now links the submission docs at the top for discoverability.
+
+- **Wed 17 Sep (deployment)** — **Live deployment complete and verified.**
+  GitHub repo created and pushed (`cashubhammishra-ctrl/CA_PracticeOS_Compliance`).
+  Render Blueprint deployed both services from `render.yaml`:
+  `ca-practiceos-backend` (FastAPI) and `ca-practiceos-streamlit` (demo UI),
+  both live — see `deployment_link.txt`.
+  - Verified the **live** backend directly (not just locally): `/health`,
+    `/api/compliance/document-types`, the full `/api/drafting/generate-and-check`
+    Agent 2 → Agent 3 pipeline (reproduced the same Limitations finding as every
+    local run), and `/api/onboarding/extract` (vision extraction on a real GST
+    certificate image) — all correct, confirming `ANTHROPIC_API_KEY` is
+    configured correctly on Render.
+  - **Redesigned the Streamlit UI** after feedback that the default look
+    wasn't presentable for the video: added a `.streamlit/config.toml` theme
+    and branded navy/gold styling matching the L1 app (hero banner, card
+    layout, colored PASS/FAIL badges, metric tiles for extracted client
+    data, tab icons) instead of bare default Streamlit widgets. Verified
+    live on the actual Render deployment, not just locally — including a
+    full compliance check run showing the new badge/card styling working
+    correctly in production.
+  - Git push required Git Credential Manager login done by the user directly
+    in their own terminal (this sandboxed tool can't complete an interactive
+    OAuth prompt); after that one-time login, subsequent pushes from this
+    session worked non-interactively using the cached credential.

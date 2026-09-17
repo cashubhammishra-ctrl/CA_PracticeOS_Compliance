@@ -1,3 +1,9 @@
-Live backend URL: [pending - fill in after Render deployment, see README.md "Deploying"]
-Live Streamlit demo URL: [pending - fill in after Render deployment]
+Live backend URL: https://ca-practiceos-backend.onrender.com
+Live Streamlit demo URL: https://ca-practiceos-streamlit.onrender.com
 Video link (unlisted YouTube/Drive): [pending - Wed 23 Sep session]
+
+Verified live 2026-09-17: /health, /api/compliance/document-types,
+/api/drafting/generate-and-check (full Agent 2 -> Agent 3 pipeline), and
+/api/onboarding/extract (vision extraction) all tested against the deployed
+backend directly, not just locally. Streamlit UI redesigned with the L1 app's
+navy/gold branding and confirmed live in a real browser session.
