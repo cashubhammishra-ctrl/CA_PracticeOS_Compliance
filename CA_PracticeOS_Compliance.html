@@ -152,6 +152,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
   <div class="nav">
     <div class="section">Workspace</div>
     <button data-view="dashboard" class="active">▦ Dashboard</button>
+    <button data-view="aiagents">🤖 AI Agents</button>
     <button data-view="clients">◉ Client Master</button>
     <button data-view="securities">◆ Securities / ISIN Master</button>
     <button data-view="documents">▤ Document Register</button>
@@ -224,6 +225,56 @@ nav button, .sidebar button, aside button { cursor:pointer; }
     </div>
     <div class="card" style="margin-top:16px">
       <h3>Recent Documents</h3><div id="recentDocs"></div>
+    </div>
+  </section>
+
+  <section id="aiagents" class="view">
+    <div class="card" style="margin-bottom:16px;border:1px solid #c9a227;background:linear-gradient(135deg,#fffdf5,#ffffff)">
+      <h3>🤖 AI Agent Layer</h3>
+      <div class="notice">
+        These three agents call a Python backend (FastAPI + Claude) deployed separately —
+        the AI reasoning, document parsing and multi-step validation logic live server-side,
+        never in this browser file. <b>✓ Agent 3 (Compliance) is the headline feature</b> —
+        it validates a drafted document against a mandatory-clause checklist, not just a
+        one-shot generation.
+      </div>
+      <div class="formgrid">
+        <div class="field full"><label>AI Backend URL</label><input id="aiBackendUrl" value="https://ca-practiceos-backend.onrender.com"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3>✓ Agent 3 — Compliance Checklist <span class="badge gold" style="background:#fff3dd;color:#b76e00">Headline Feature</span></h3>
+      <div class="notice">Checks a drafted document's actual text against the mandatory clauses for its document type — pass/fail with exactly what's missing.</div>
+      <div class="formgrid">
+        <div class="field"><label>Document Type</label><select id="aiComplianceDocType"><option value="">Auto-detect</option><option>Engagement Letter</option><option>Net Worth Certificate</option><option>General Certificate</option><option>Representation Letter</option><option>Working Paper</option><option>Professional Fee Note</option></select></div>
+        <div class="field full"><label>Drafted Document Text</label><textarea id="aiComplianceText" placeholder="Paste an engagement letter, certificate, or other drafted document here..." style="min-height:160px"></textarea></div>
+      </div>
+      <div class="actions"><button class="btn gold" onclick="runAICompliance()">Run Compliance Check</button></div>
+      <div id="aiComplianceResult" style="margin-top:14px"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3>✎ Agent 2 — Document Drafting</h3>
+      <div class="notice">One plain-English instruction becomes a filled draft, reusing this app's own document structure — then feed it straight into Agent 3 above.</div>
+      <div class="formgrid">
+        <div class="field full"><label>Describe the document in one line</label><input id="aiDraftingInstruction" value="Prepare an engagement letter for ABC Pvt Ltd for tax audit AY 2025-26, fees Rs 50,000"></div>
+      </div>
+      <div class="actions">
+        <button class="btn gold" onclick="runAIDrafting()">Generate Draft</button>
+        <button class="btn" id="aiDraftCheckBtn" onclick="checkAIDraftCompliance()" disabled>Check Compliance on This Draft</button>
+      </div>
+      <div id="aiDraftingResult" style="margin-top:14px"></div>
+    </div>
+
+    <div class="card">
+      <h3>◉ Agent 1 — Client Onboarding</h3>
+      <div class="notice">Photo/PDF of a PAN card or GST certificate → a validated Client Master row, ready to add straight into Client Master.</div>
+      <div class="formgrid">
+        <div class="field full"><label>Upload a PAN card or GST certificate</label><input id="aiOnboardingFile" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf"></div>
+      </div>
+      <div class="actions"><button class="btn gold" onclick="runAIOnboarding()">Extract Client Details</button></div>
+      <div id="aiOnboardingResult" style="margin-top:14px"></div>
     </div>
   </section>
 
@@ -832,7 +883,7 @@ function money(n){return new Intl.NumberFormat('en-IN',{style:'currency',currenc
 function numWords(n){n=Math.round(Number(n)||0); if(n===0)return 'Zero Rupees Only'; const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];function two(x){if(x<20)return ones[x];return tens[Math.floor(x/10)]+(x%10?' '+ones[x%10]:'')}function part(x){let a=[];if(x>=100){a.push(ones[Math.floor(x/100)]+' Hundred');x%=100}if(x)a.push(two(x));return a.join(' ')}let out=[];let cr=Math.floor(n/10000000);n%=10000000;let lk=Math.floor(n/100000);n%=100000;let th=Math.floor(n/1000);n%=1000;if(cr)out.push(part(cr)+' Crore');if(lk)out.push(part(lk)+' Lakh');if(th)out.push(part(th)+' Thousand');if(n)out.push(part(n));return out.join(' ')+' Rupees Only'}
 function today(){return new Date().toISOString().slice(0,10)}
 function clientName(id){let c=state.clients.find(x=>x.id===id);return c?c.name:'—'}
-function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',tally:'Tally Connector',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); if(id==='settings')loadSettings(); window.scrollTo(0,0)}
+function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',aiagents:'AI Agents',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',tally:'Tally Connector',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); if(id==='settings')loadSettings(); window.scrollTo(0,0)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{showView(b.dataset.view);closeMobileNav()}));
 
 // ---- Mobile off-canvas navigation ----
@@ -1833,6 +1884,130 @@ function saveOneDriveConfig(){
 function openOneDriveDocs(){window.open("https://onedrive.live.com/","_blank","noopener,noreferrer")}
 function saveComputexConfig(){state.integrations.computex={enabled:true,mode:document.getElementById("computexMode").value,scope:document.getElementById("computexScope").value};audit("Computex Connector Configured");save();alert("Computex connector settings saved. Use API/approved export mapping in the production connector.")}
 function saveZohoConfig(){state.integrations.zoho={enabled:true,mode:document.getElementById("zohoMode").value,module:document.getElementById("zohoModule").value};audit("Zoho Connector Configured");save();alert("Zoho connector settings saved. Production OAuth/API tokens must remain server-side.")}
+
+// ---- AI Agent Layer: calls the separately-deployed Python/FastAPI backend ----
+function aiBackendUrl(){
+  return (document.getElementById('aiBackendUrl')?.value||'https://ca-practiceos-backend.onrender.com').trim().replace(/\/$/,'');
+}
+function aiStatusHtml(msg,isError){
+  return `<div class="notice" style="border-left-color:${isError?'var(--red)':'var(--gold)'}">${msg}</div>`;
+}
+async function aiFetchJson(path,body){
+  const url=aiBackendUrl()+path;
+  let res;
+  try{
+    res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  }catch(err){
+    throw new Error('Could not reach the AI backend at '+url+'. It may be waking up from sleep (Render free tier can take 30-60s on first request) - try again in a moment. '+err.message);
+  }
+  if(!res.ok){
+    let detail='';
+    try{detail=(await res.json()).detail||''}catch(e){}
+    throw new Error('Backend returned HTTP '+res.status+(detail?': '+detail:''));
+  }
+  return res.json();
+}
+function complianceResultHtml(result){
+  const badge=result.overall==='PASS'?'<span class="badge green">✅ PASS</span>':'<span class="badge red">❌ FAIL</span>';
+  const missing=result.missing&&result.missing.length?`<div class="notice" style="border-left-color:var(--red)"><b>Missing clauses:</b> ${result.missing.map(esc).join(', ')}</div>`:'';
+  const review=result.needs_review&&result.needs_review.length?`<div class="notice"><b>Needs human review:</b> ${result.needs_review.map(esc).join(', ')}</div>`:'';
+  const items=(result.items||[]).map(it=>{
+    const icon=it.status==='present'?'✅':it.status==='absent'?'❌':'⚠️';
+    return `<label style="display:block;padding:8px 0;border-bottom:1px solid #edf1f5"><b>${icon} ${esc(it.name)}</b><br><span class="muted" style="font-size:12px">${esc(it.reason)}</span>${it.evidence?`<br><span class="muted" style="font-size:12px;font-style:italic">"${esc(it.evidence)}"</span>`:''}</label>`;
+  }).join('');
+  return `<div class="card"><p>${badge} &nbsp; <b>${esc(result.document_type)}</b></p>${missing}${review}<div style="margin-top:10px">${items}</div></div>`;
+}
+async function runAICompliance(){
+  const el=document.getElementById('aiComplianceResult');
+  el.innerHTML=aiStatusHtml('Running Agent 3 (perceive → reason → self-check → act)…');
+  const text=document.getElementById('aiComplianceText').value.trim();
+  const docType=document.getElementById('aiComplianceDocType').value||null;
+  if(!text){el.innerHTML=aiStatusHtml('Paste a drafted document first.',true);return}
+  try{
+    const result=await aiFetchJson('/api/compliance/check',{text,doc_type:docType});
+    el.innerHTML=complianceResultHtml(result);
+  }catch(err){
+    el.innerHTML=aiStatusHtml('❌ '+esc(err.message),true);
+  }
+}
+let lastAIDraft=null;
+async function runAIDrafting(){
+  const el=document.getElementById('aiDraftingResult');
+  const instruction=document.getElementById('aiDraftingInstruction').value.trim();
+  document.getElementById('aiDraftCheckBtn').disabled=true;
+  lastAIDraft=null;
+  if(!instruction){el.innerHTML=aiStatusHtml('Type an instruction first.',true);return}
+  el.innerHTML=aiStatusHtml('Agent 2 drafting…');
+  try{
+    const draft=await aiFetchJson('/api/drafting/generate',{instruction});
+    lastAIDraft=draft;
+    document.getElementById('aiDraftCheckBtn').disabled=false;
+    el.innerHTML=`<div class="card"><p><span class="badge blue">Agent 2</span> <b>${esc(draft.doc_type)}</b> for <b>${esc(draft.client_name)}</b></p><textarea readonly style="min-height:220px;width:100%">${esc(draft.draft_text)}</textarea></div>`;
+  }catch(err){
+    el.innerHTML=aiStatusHtml('❌ '+esc(err.message),true);
+  }
+}
+async function checkAIDraftCompliance(){
+  if(!lastAIDraft)return;
+  const el=document.getElementById('aiDraftingResult');
+  el.insertAdjacentHTML('beforeend',aiStatusHtml('Feeding the draft straight into Agent 3…'));
+  try{
+    const result=await aiFetchJson('/api/compliance/check',{text:lastAIDraft.draft_text,doc_type:lastAIDraft.doc_type});
+    el.insertAdjacentHTML('beforeend',complianceResultHtml(result));
+  }catch(err){
+    el.insertAdjacentHTML('beforeend',aiStatusHtml('❌ '+esc(err.message),true));
+  }
+}
+let lastAIOnboardingRow=null;
+async function runAIOnboarding(){
+  const el=document.getElementById('aiOnboardingResult');
+  const file=document.getElementById('aiOnboardingFile').files[0];
+  if(!file){el.innerHTML=aiStatusHtml('Choose a file first.',true);return}
+  el.innerHTML=aiStatusHtml('Running Agent 1 (perceive → reason → act → validate)…');
+  const form=new FormData();
+  form.append('file',file);
+  try{
+    const res=await fetch(aiBackendUrl()+'/api/onboarding/extract',{method:'POST',body:form});
+    if(!res.ok){
+      let detail='';
+      try{detail=(await res.json()).detail||''}catch(e){}
+      throw new Error('Backend returned HTTP '+res.status+(detail?': '+detail:''));
+    }
+    const result=await res.json();
+    lastAIOnboardingRow=result.row;
+    const r=result.row;
+    el.innerHTML=`<div class="card">
+      <p>${result.valid?'<span class="badge green">✅ Validated</span>':'<span class="badge orange">⚠ Needs review</span>'}</p>
+      <table class="table"><tr><th>Field</th><th>Value</th></tr>
+      <tr><td>Client Name</td><td>${esc(r.name)}</td></tr>
+      <tr><td>Entity Type</td><td>${esc(r.entity)}</td></tr>
+      <tr><td>PAN</td><td>${esc(r.pan)}</td></tr>
+      <tr><td>GSTIN</td><td>${esc(r.gstin)}</td></tr>
+      <tr><td>State</td><td>${esc(r.state)}</td></tr>
+      <tr><td>Address</td><td>${esc(r.address)}</td></tr>
+      </table>
+      <div class="actions" style="margin-top:12px"><button class="btn gold" onclick="addAIExtractedClient()">+ Add to Client Master</button></div>
+    </div>`;
+  }catch(err){
+    el.innerHTML=aiStatusHtml('❌ '+esc(err.message),true);
+  }
+}
+function addAIExtractedClient(){
+  if(!lastAIOnboardingRow){alert('Run extraction first.');return}
+  const r=lastAIOnboardingRow;
+  const keyPan=(r.pan||'').toUpperCase();
+  let idx=keyPan?state.clients.findIndex(c=>(c.pan||'').toUpperCase()===keyPan):-1;
+  const rec={
+    id:idx>=0?state.clients[idx].id:crypto.randomUUID(),
+    name:r.name||'',entity:r.entity||'Individual',pan:r.pan||'',gstin:r.gstin||'',
+    cin:'',contact:'',mobile:'',email:'',address:r.address||'',state:r.state||'Delhi',
+    sez:!!r.sez,customFields:idx>=0?(state.clients[idx].customFields||{}):{}
+  };
+  if(idx>=0)state.clients[idx]=rec;else state.clients.push(rec);
+  audit('Client Added via AI Onboarding Agent',rec.name);
+  save();
+  alert((idx>=0?'Updated':'Added')+' client: '+rec.name+'\n\nCheck Client Master to see it.');
+}
 
 // ---- Tally Connector: talks directly to Tally Prime's own XML/HTTP gateway ----
 function tallyStatus(html,isError){
