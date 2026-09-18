@@ -91,7 +91,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
    Mobile-friendly layer (phones & small tablets)
    Off-canvas sidebar + hamburger + touch-sized controls
    ========================================================= */
-.menuToggle{display:none;border:1px solid var(--line);background:#fff;color:var(--navy);width:42px;height:42px;border-radius:9px;font-size:19px;align-items:center;justify-content:center;flex:0 0 auto}
+.menuToggle{display:none;border:1px solid var(--line);background:#fff;color:var(--navy);width:42px;height:42px;border-radius:9px;font-size:19px;align-items:center;justify-content:center;flex:0 0 auto;position:relative;z-index:25}
 .menuToggle span{display:block;width:18px;height:2px;background:var(--navy);position:relative}
 .menuToggle span::before,.menuToggle span::after{content:"";position:absolute;left:0;width:18px;height:2px;background:var(--navy)}
 .menuToggle span::before{top:-6px}.menuToggle span::after{top:6px}
