@@ -10,6 +10,7 @@ import tempfile
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -19,6 +20,18 @@ from agents.onboarding import OnboardingAgent
 from schema import CLIENT_MASTER_HEADERS, to_client_master_row
 
 app = FastAPI(title="CA PracticeOS Compliance - AI Agent Layer")
+
+# The L1 app (CA_PracticeOS_Compliance.html) calls this backend directly from
+# the browser - it may be opened as a local file (origin "null") or served
+# from any local/static host, so origins can't be pinned to one value. No
+# cookies/auth are used by this API, so a permissive origin policy here does
+# not expose credentials.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 _onboarding_agent: OnboardingAgent | None = None
 _compliance_agent: ComplianceAgent | None = None
