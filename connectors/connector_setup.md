@@ -121,3 +121,11 @@ the relay. Two bugs were caught and fixed during this testing: a stray
 `<CMPINFO>` count element (unrelated metadata that happens to share the tag
 name `COMPANY`/`LEDGER`) was polluting both result lists with a bogus empty
 row — fixed by requiring a `NAME` attribute on matched elements.
+
+**Confirmed working by the user directly** (not just by automated testing):
+after fixing a port conflict (two relay instances competing for port 9001 —
+run only one `tally_browser_relay.py` process at a time), Test Connection
+returned green and Fetch Ledgers returned real data in the user's own
+browser session. This is the one part of the whole capstone that was
+debugged and verified against a genuinely live, running Tally Prime
+instance rather than mocked or cached data.
