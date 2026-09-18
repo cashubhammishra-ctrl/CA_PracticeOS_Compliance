@@ -295,9 +295,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
     <div class="card">
       <h3>Net Worth Certificate Generator</h3>
       <div class="formgrid">
-        <div class="field"><label>Client</label><select id="nwClient"></select>
-
-</div>
+        <div class="field"><label>Client</label><select id="nwClient"></select></div>
         <div class="field"><label>Professional Fees (₹)</label><input id="nwFees" type="number" min="0" step="0.01" oninput="calcGSTTemplate('nw')"></div>
         <div class="field"><label>GST Applicable</label><select id="nwGSTApplicable" onchange="calcGSTTemplate('nw')"><option value="yes">Yes</option><option value="no">No</option></select></div>
         <div class="field"><label>GST Rate (%)</label><input id="nwGSTRate" type="number" value="18" min="0" step="0.01" oninput="calcGSTTemplate('nw')"></div>
@@ -359,9 +357,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
   <section id="representation" class="view">
     <div class="card"><h3>Management / Client Representation Letter</h3>
       <div class="formgrid">
-        <div class="field"><label>Client</label><select id="repClient"></select>
-
-</div>
+        <div class="field"><label>Client</label><select id="repClient"></select></div>
         <div class="field"><label>Assignment</label><select id="repType"><option>Statutory Audit</option><option>Tax Audit</option><option>Net Worth Certificate</option><option>Bank Finance / CMA</option><option>Certification Assignment</option><option>GST Assignment</option><option>General Professional Assignment</option></select></div>
         <div class="field"><label>Date</label><input id="repDate" type="date"></div>
         <div class="field"><label>Period</label><input id="repPeriod" value="FY 2025-26"></div>
@@ -452,11 +448,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
   <section id="reconciliation" class="view">
     <div class="card"><h3>Simple Reconciliation</h3><div class="notice"><b>Purpose:</b> Compare books with an external source, quantify differences and document follow-up before the report/certificate is finalized.</div>
       <div class="formgrid">
-        <div class="field"><label>Client</label><select id="recClient"></select>
-        <div class="field"><label>State of Supply / Place of Supply</label><select id="recGSTPOS" data-state-select></select></div>
-        <div class="field"><label>State where Service/Goods Rendered/Delivered</label><select id="recGSTRendered" data-state-select></select></div>
-
-</div>
+        <div class="field"><label>Client</label><select id="recClient"></select></div>
         <div class="field"><label>Reconciliation Type</label><select id="recType"><option>Books vs GST</option><option>Books vs Bank</option><option>Books vs 26AS / AIS</option><option>Books vs Debtors</option><option>Books vs Creditors</option><option>Books vs Other Statement</option></select></div>
       </div>
       <div style="margin-top:14px" class="tablewrap"><table class="table"><thead><tr><th>Particular</th><th>Books (₹)</th><th>External Statement (₹)</th><th>Difference (₹)</th><th></th></tr></thead><tbody id="recRows"></tbody></table></div>
