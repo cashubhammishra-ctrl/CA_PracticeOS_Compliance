@@ -172,6 +172,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
     <button data-view="contracts">📜 Contracts & Deeds</button>
     <button data-view="signatures">✍ Digital Signatures</button>
     <button data-view="integrations">🔗 Integrations</button>
+    <button data-view="tally">📊 Tally Connector</button>
     <button data-view="reconciliation">⇄ Reconciliation</button>
     <div class="section">System</div>
     <button data-view="firmsetup">★ Firm Setup Wizard</button>
@@ -729,6 +730,37 @@ nav button, .sidebar button, aside button { cursor:pointer; }
     </div>
   </section>
 
+  <section id="tally" class="view">
+    <div class="card">
+      <h3>📊 Tally Connector</h3>
+      <div class="notice">
+        <b>How this works:</b> this connects directly from your browser to Tally Prime's
+        own built-in XML/HTTP gateway on your local machine — no separate server or
+        install needed for this L1 connector. In Tally Prime: <b>F1 → Settings →
+        Connectivity → Client/Server configuration</b> → set "TallyPrime acts as:
+        Server", Port <b>9000</b>, then open the company you want to connect to.
+        This only works when Tally Prime is running on the <b>same machine or local
+        network</b> as this browser — it cannot reach a cloud-hosted copy of this app,
+        and some browsers may block the request as cross-origin (CORS); if Test
+        Connection keeps failing after checking the above, that is the likely reason.
+      </div>
+      <div class="formgrid">
+        <div class="field"><label>Tally Server URL</label><input id="tallyUrl" value="http://localhost:9000"></div>
+        <div class="field"><label>Company Name (blank = active company in Tally)</label><input id="tallyCompany" placeholder="Exact company name as shown in Tally"></div>
+      </div>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn gold" onclick="testTallyConnection()">Test Connection</button>
+        <button class="btn" onclick="fetchTallyCompanies()">Fetch Companies</button>
+        <button class="btn" onclick="fetchTallyLedgers()">Fetch Ledgers</button>
+      </div>
+      <div id="tallyStatus" class="notice" style="display:none;margin-top:12px"></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>Result</h3>
+      <div class="tablewrap"><table class="table"><thead id="tallyResultHead"><tr><th>Run a fetch above to see results</th></tr></thead><tbody id="tallyResultBody"></tbody></table></div>
+    </div>
+  </section>
+
   <section id="settings" class="view">
     <div class="card"><h3>Firm Settings</h3>
       <div class="formgrid">
@@ -800,7 +832,7 @@ function money(n){return new Intl.NumberFormat('en-IN',{style:'currency',currenc
 function numWords(n){n=Math.round(Number(n)||0); if(n===0)return 'Zero Rupees Only'; const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];function two(x){if(x<20)return ones[x];return tens[Math.floor(x/10)]+(x%10?' '+ones[x%10]:'')}function part(x){let a=[];if(x>=100){a.push(ones[Math.floor(x/100)]+' Hundred');x%=100}if(x)a.push(two(x));return a.join(' ')}let out=[];let cr=Math.floor(n/10000000);n%=10000000;let lk=Math.floor(n/100000);n%=100000;let th=Math.floor(n/1000);n%=1000;if(cr)out.push(part(cr)+' Crore');if(lk)out.push(part(lk)+' Lakh');if(th)out.push(part(th)+' Thousand');if(n)out.push(part(n));return out.join(' ')+' Rupees Only'}
 function today(){return new Date().toISOString().slice(0,10)}
 function clientName(id){let c=state.clients.find(x=>x.id===id);return c?c.name:'—'}
-function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); if(id==='settings')loadSettings(); window.scrollTo(0,0)}
+function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',tally:'Tally Connector',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); if(id==='settings')loadSettings(); window.scrollTo(0,0)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{showView(b.dataset.view);closeMobileNav()}));
 
 // ---- Mobile off-canvas navigation ----
@@ -1801,6 +1833,91 @@ function saveOneDriveConfig(){
 function openOneDriveDocs(){window.open("https://onedrive.live.com/","_blank","noopener,noreferrer")}
 function saveComputexConfig(){state.integrations.computex={enabled:true,mode:document.getElementById("computexMode").value,scope:document.getElementById("computexScope").value};audit("Computex Connector Configured");save();alert("Computex connector settings saved. Use API/approved export mapping in the production connector.")}
 function saveZohoConfig(){state.integrations.zoho={enabled:true,mode:document.getElementById("zohoMode").value,module:document.getElementById("zohoModule").value};audit("Zoho Connector Configured");save();alert("Zoho connector settings saved. Production OAuth/API tokens must remain server-side.")}
+
+// ---- Tally Connector: talks directly to Tally Prime's own XML/HTTP gateway ----
+function tallyStatus(html,isError){
+  const el=document.getElementById('tallyStatus');if(!el)return;
+  el.style.display='block';
+  el.style.borderLeftColor=isError?'var(--red)':'var(--gold)';
+  el.innerHTML=html;
+}
+async function tallyRequest(xml){
+  const url=(document.getElementById('tallyUrl')?.value||'http://localhost:9000').trim();
+  let res;
+  try{
+    res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/xml'},body:xml});
+  }catch(networkErr){
+    throw new Error('Network request failed (Tally not reachable, or blocked by the browser as a cross-origin request). '+networkErr.message);
+  }
+  if(!res.ok)throw new Error('Tally responded with HTTP '+res.status);
+  const text=await res.text();
+  if(!text||!text.trim())throw new Error('Empty response from Tally. Check the company is open and the request format matches your Tally version.');
+  const xmlDoc=new DOMParser().parseFromString(text,'text/xml');
+  if(xmlDoc.querySelector('parsererror'))throw new Error('Could not parse the response as XML. Raw response: '+text.slice(0,300));
+  return xmlDoc;
+}
+const TALLY_TROUBLESHOOTING=`Checklist:<br>
+1) Tally Prime is running and the company is open.<br>
+2) F1 → Settings → Connectivity → "TallyPrime acts as: Server", Port 9000.<br>
+3) This browser and Tally Prime are on the same machine or local network.<br>
+4) Some browsers block this as a cross-origin (CORS) request — if the above are all correct and it still fails, that is the likely cause; there is no separate proxy for this in-browser connector.`;
+async function testTallyConnection(){
+  tallyStatus('Connecting to Tally…');
+  try{
+    const xml='<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><EXPORTDATA><REQUESTDESC><REPORTNAME>List of Companies</REPORTNAME></REQUESTDESC></EXPORTDATA></BODY></ENVELOPE>';
+    await tallyRequest(xml);
+    tallyStatus('✅ Connected to Tally successfully.');
+  }catch(err){
+    tallyStatus('❌ Could not connect to Tally.<br><br>'+TALLY_TROUBLESHOOTING+'<br><br><b>Error detail:</b> '+esc(err.message),true);
+  }
+}
+function renderTallyTable(headers,rows){
+  document.getElementById('tallyResultHead').innerHTML='<tr>'+headers.map(h=>`<th>${esc(h)}</th>`).join('')+'</tr>';
+  document.getElementById('tallyResultBody').innerHTML=rows.length?rows.map(r=>'<tr>'+r.map(c=>`<td>${esc(c)}</td>`).join('')+'</tr>').join(''):`<tr><td colspan="${headers.length}" class="empty">No rows returned.</td></tr>`;
+}
+async function fetchTallyCompanies(){
+  tallyStatus('Fetching companies…');
+  try{
+    const xml='<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><EXPORTDATA><REQUESTDESC><REPORTNAME>List of Companies</REPORTNAME></REQUESTDESC></EXPORTDATA></BODY></ENVELOPE>';
+    const xmlDoc=await tallyRequest(xml);
+    const companies=[...xmlDoc.getElementsByTagName('COMPANY')].map(c=>c.getAttribute('NAME')||c.textContent.trim()).filter(Boolean);
+    if(!companies.length){
+      tallyStatus('Connected, but no company names were found in the response. Your Tally version may format this differently — try "Fetch Ledgers" instead with a company name typed in above, or check the raw response in the browser console.');
+      renderTallyTable(['Raw response (first 2000 characters)'],[[xmlDoc.documentElement?.outerHTML?.slice(0,2000)||'(empty)']]);
+      return;
+    }
+    renderTallyTable(['Company Name'],companies.map(c=>[c]));
+    tallyStatus(`✅ Found ${companies.length} compan${companies.length===1?'y':'ies'}.`);
+  }catch(err){
+    tallyStatus('❌ Could not fetch companies.<br><br>'+TALLY_TROUBLESHOOTING+'<br><br><b>Error detail:</b> '+esc(err.message),true);
+  }
+}
+async function fetchTallyLedgers(){
+  tallyStatus('Fetching ledgers…');
+  const company=document.getElementById('tallyCompany')?.value.trim()||'';
+  try{
+    const xml=`<ENVELOPE>
+<HEADER><VERSION>1</VERSION><TALLYREQUEST>EXPORT</TALLYREQUEST><TYPE>COLLECTION</TYPE><ID>LedgerCollection</ID></HEADER>
+<BODY><DESC>
+<STATICVARIABLES>${company?`<SVCURRENTCOMPANY>${esc(company)}</SVCURRENTCOMPANY>`:''}</STATICVARIABLES>
+<TDL><TDLMESSAGE><COLLECTION NAME="LedgerCollection" ISMODIFY="No"><TYPE>Ledger</TYPE><FETCH>NAME,PARENT,OPENINGBALANCE,CLOSINGBALANCE</FETCH></COLLECTION></TDLMESSAGE></TDL>
+</DESC></BODY></ENVELOPE>`;
+    const xmlDoc=await tallyRequest(xml);
+    const ledgers=[...xmlDoc.getElementsByTagName('LEDGER')].map(l=>{
+      const get=tag=>l.getElementsByTagName(tag)[0]?.textContent||'';
+      return [l.getAttribute('NAME')||get('NAME'),get('PARENT'),get('OPENINGBALANCE')||'0',get('CLOSINGBALANCE')||'0'];
+    });
+    if(!ledgers.length){
+      tallyStatus('Connected, but no ledgers were found. Double-check the company name matches exactly what is shown in Tally (case and spacing), or leave it blank to use the currently active company.',true);
+      renderTallyTable(['Raw response (first 2000 characters)'],[[xmlDoc.documentElement?.outerHTML?.slice(0,2000)||'(empty)']]);
+      return;
+    }
+    renderTallyTable(['Ledger Name','Group','Opening Balance','Closing Balance'],ledgers);
+    tallyStatus(`✅ Fetched ${ledgers.length} ledgers${company?' for '+esc(company):''}.`);
+  }catch(err){
+    tallyStatus('❌ Could not fetch ledgers.<br><br>'+TALLY_TROUBLESHOOTING+'<br><br><b>Error detail:</b> '+esc(err.message),true);
+  }
+}
 
 function saveESignConfig(){
   state.integrations.esign={
