@@ -800,7 +800,7 @@ function money(n){return new Intl.NumberFormat('en-IN',{style:'currency',currenc
 function numWords(n){n=Math.round(Number(n)||0); if(n===0)return 'Zero Rupees Only'; const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];function two(x){if(x<20)return ones[x];return tens[Math.floor(x/10)]+(x%10?' '+ones[x%10]:'')}function part(x){let a=[];if(x>=100){a.push(ones[Math.floor(x/100)]+' Hundred');x%=100}if(x)a.push(two(x));return a.join(' ')}let out=[];let cr=Math.floor(n/10000000);n%=10000000;let lk=Math.floor(n/100000);n%=100000;let th=Math.floor(n/1000);n%=1000;if(cr)out.push(part(cr)+' Crore');if(lk)out.push(part(lk)+' Lakh');if(th)out.push(part(th)+' Thousand');if(n)out.push(part(n));return out.join(' ')+' Rupees Only'}
 function today(){return new Date().toISOString().slice(0,10)}
 function clientName(id){let c=state.clients.find(x=>x.id===id);return c?c.name:'—'}
-function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); window.scrollTo(0,0)}
+function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); if(id==='settings')loadSettings(); window.scrollTo(0,0)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{showView(b.dataset.view);closeMobileNav()}));
 
 // ---- Mobile off-canvas navigation ----
@@ -1636,24 +1636,6 @@ function loadSecuritiesForNW(){
   holdings.forEach(s=>addNWRow('asset',s.name+(s.isin?' ('+s.isin+')':''),s.evidence||'Securities Master / Demat statement',s.value||0));
 }
 
-function saveWorkflowAccess(){
-  state.security.users=[
-    {name:document.getElementById('wfAdminName').value.trim(),email:document.getElementById('wfAdminEmail').value.trim(),role:'Admin'},
-    {name:document.getElementById('wfPreparerName').value.trim(),email:document.getElementById('wfPreparerEmail').value.trim(),role:'Preparer'},
-    {name:document.getElementById('wfApproverName').value.trim(),email:document.getElementById('wfApproverEmail').value.trim(),role:'Approver'}
-  ].filter(x=>x.name||x.email);
-  const prep=state.security.users.find(x=>x.role==='Preparer')||{};
-  const app=state.security.users.find(x=>x.role==='Approver')||{};
-  state.security.preparerEmail=prep.email||'';state.security.approver=app.name||'';state.security.approverEmail=app.email||'';
-  audit('Access & Approval Setup Updated');save();alert('Admin, Preparer and Approver access/email setup saved.');
-}
-function loadWorkflowAccess(){
-  const u=state.security.users||[];
-  const find=r=>u.find(x=>x.role===r)||{};
-  const vals={wfAdminName:find('Admin').name||'',wfAdminEmail:find('Admin').email||'',wfPreparerName:find('Preparer').name||'',wfPreparerEmail:find('Preparer').email||state.security.preparerEmail||'',wfApproverName:find('Approver').name||state.security.approver||'',wfApproverEmail:find('Approver').email||state.security.approverEmail||'',
-    setGSTState:state.settings.gstState||'Delhi',setAppBaseUrl:state.settings.appBaseUrl||''};
-  Object.keys(vals).forEach(id=>{const e=document.getElementById(id);if(e)e.value=vals[id]});
-}
 function testApprovalEmail(){
   const email=document.getElementById('wfApproverEmail')?.value||state.security.approverEmail||'';
   if(!email){alert('Enter the Approver email ID first.');return}
@@ -1890,7 +1872,7 @@ function openDocDB(){return new Promise((resolve,reject)=>{const r=indexedDB.ope
 function saveBlobToIDB(key,file){return openDocDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put({blob:file,name:file.name,type:file.type,size:file.size},key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)}))}
 function getBlobFromIDB(key){return openDocDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(IDB_STORE,'readonly');const r=tx.objectStore(IDB_STORE).get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}))}
 
-function loadSettings(){let s=state.settings;['Firm','CA','Membership','FRN','Address','Email','Phone','Website','GSTState','AppBaseUrl','Footer'].forEach(k=>{let el=document.getElementById('set'+k);if(el)el.value=s[k.toLowerCase()]??''});renderFirmSetupSummary();if(document.getElementById('setGSTState'))document.getElementById('setGSTState').value=state.settings.gstState||'Delhi';if(document.getElementById('setAppBaseUrl'))document.getElementById('setAppBaseUrl').value=state.settings.appBaseUrl||'';loadWorkflowAccess()}
+function loadSettings(){let s=state.settings;['Firm','CA','Membership','FRN','Address','Email','Phone','Website','GSTState','AppBaseUrl','Footer'].forEach(k=>{let el=document.getElementById('set'+k);if(el)el.value=s[k.toLowerCase()]??''});renderFirmSetupSummary();if(document.getElementById('setGSTState'))document.getElementById('setGSTState').value=state.settings.gstState||'Delhi';if(document.getElementById('setAppBaseUrl'))document.getElementById('setAppBaseUrl').value=state.settings.appBaseUrl||'';}
 function saveSettings(){state.settings={...state.settings,firm:document.getElementById('setFirm').value||'CA Firm',ca:document.getElementById('setCA').value||'',membership:document.getElementById('setMembership').value,frn:document.getElementById('setFRN').value,address:document.getElementById('setAddress').value,email:document.getElementById('setEmail').value,phone:document.getElementById('setPhone').value,website:document.getElementById('setWebsite')?.value||'',gstState:document.getElementById('setGSTState')?.value||state.settings.gstState||'Delhi',appBaseUrl:document.getElementById('setAppBaseUrl')?.value.trim()||state.settings.appBaseUrl||'',footer:document.getElementById('setFooter').value};save();renderFirmSetupSummary();alert('Firm profile saved locally.')}
 function renderFirmSetupSummary(){let s=state.settings;let el=document.getElementById('firmSetupSummary');if(el)el.innerHTML=`<div class="card" style="margin-top:12px"><b>${esc(s.firm||'CA Firm')}</b><br>${esc(s.ca||'')}<br><span class="muted">${esc(s.address||'')} ${s.email?' • '+esc(s.email):''}</span></div>`;let cc=document.getElementById('setupClientCount');if(cc)cc.textContent=state.clients.length} 
 function downloadFirmProfileTemplate(){
@@ -1932,8 +1914,8 @@ function restoreData(e){let f=e.target.files[0];if(!f)return;let r=new FileReade
 
 function resetForm(view){document.querySelectorAll('#'+view+' input,#'+view+' textarea').forEach(x=>{if(x.type!=='date')x.value=''});populateClients()}
 document.getElementById('nwDate').value=today();document.getElementById('elDate').value=today();document.getElementById('repDate').value=today();document.getElementById('wpDate').value=today();
-loadSettings();renderFirmSetupSummary();
-try{const approvalParam=new URLSearchParams(location.search).get('approval');if(approvalParam)setTimeout(()=>openApproval(approvalParam),300)}catch(e){}renderSecurity();populateClients();renderClients();renderDocs();renderUDIN();renderFees();calcEngagementFees();calcCertificateFees();calcFeeModule();renderRecent();updateDashboard();renderRobustModules();fillGSTStates();loadWorkflowAccess();audit('Application Started');save();
+fillGSTStates();loadSettings();renderFirmSetupSummary();
+try{const approvalParam=new URLSearchParams(location.search).get('approval');if(approvalParam)setTimeout(()=>openApproval(approvalParam),300)}catch(e){}renderSecurity();populateClients();renderClients();renderDocs();renderUDIN();renderFees();calcEngagementFees();calcCertificateFees();calcFeeModule();renderRecent();updateDashboard();renderRobustModules();audit('Application Started');save();
 </script>
 </body>
 </html>
