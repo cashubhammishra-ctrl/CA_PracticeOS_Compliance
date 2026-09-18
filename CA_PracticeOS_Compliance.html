@@ -1718,7 +1718,7 @@ function fillGSTStates(){
     if(old&&GST_STATES.includes(old))e.value=old;
   });
   ['gstSupplierState','gstPOSState','gstRenderedState'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=state.settings.gstState||'Delhi'});
-  ['elGSTPOS','elGSTRendered','nwGSTPOS','nwGSTRendered','certGSTPOS','certGSTRendered','repGSTPOS','repGSTRendered','wpGSTPOS','wpGSTRendered','recGSTPOS','recGSTRendered'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=state.settings.gstState||'Delhi'});
+  ['elGSTPOS','elGSTRendered','nwGSTPOS','nwGSTRendered','certGSTPOS','certGSTRendered','feeGSTPOS','feeGSTRendered'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=state.settings.gstState||'Delhi'});
   document.querySelectorAll('[id$="GSTPOS"]').forEach(e=>{if(!e.value)e.value=state.settings.gstState||'Delhi'});
 }
 function loadGSTFromClient(){
