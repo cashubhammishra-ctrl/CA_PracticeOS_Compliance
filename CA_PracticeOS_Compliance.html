@@ -1841,6 +1841,21 @@ function tallyStatus(html,isError){
   el.style.borderLeftColor=isError?'var(--red)':'var(--gold)';
   el.innerHTML=html;
 }
+function sanitizeTallyXml(text){
+  // Tally's XML export sometimes embeds illegal XML 1.0 control characters
+  // (e.g. "&#4;") as hierarchy-depth markers inside group/parent names, which
+  // are syntactically valid character references but point to code points
+  // XML 1.0 forbids - strict browsers reject the whole document because of
+  // them. Strip both the escaped references and any raw control characters.
+  return text
+    .replace(/&#x?0*([0-9a-fA-F]+);/gi,(m,num)=>{
+      const isHex=/&#x/i.test(m);
+      const code=parseInt(num,isHex?16:10);
+      const legal=code===9||code===10||code===13||(code>=32&&code<=0xD7FF)||(code>=0xE000&&code<=0xFFFD);
+      return legal?m:'';
+    })
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');
+}
 async function tallyRequest(xml){
   const url=(document.getElementById('tallyUrl')?.value||'http://localhost:9000').trim();
   let res;
@@ -1850,10 +1865,11 @@ async function tallyRequest(xml){
     throw new Error('Network request failed (Tally not reachable, or blocked by the browser as a cross-origin request). '+networkErr.message);
   }
   if(!res.ok)throw new Error('Tally responded with HTTP '+res.status);
-  const text=await res.text();
-  if(!text||!text.trim())throw new Error('Empty response from Tally. Check the company is open and the request format matches your Tally version.');
+  const rawText=await res.text();
+  if(!rawText||!rawText.trim())throw new Error('Empty response from Tally. Check the company is open and the request format matches your Tally version.');
+  const text=sanitizeTallyXml(rawText);
   const xmlDoc=new DOMParser().parseFromString(text,'text/xml');
-  if(xmlDoc.querySelector('parsererror'))throw new Error('Could not parse the response as XML. Raw response: '+text.slice(0,300));
+  if(xmlDoc.querySelector('parsererror'))throw new Error('Could not parse the response as XML. Raw response: '+rawText.slice(0,300));
   return xmlDoc;
 }
 const TALLY_TROUBLESHOOTING=`Checklist:<br>
@@ -1861,11 +1877,11 @@ const TALLY_TROUBLESHOOTING=`Checklist:<br>
 2) F1 → Settings → Connectivity → "TallyPrime acts as: Server", Port 9000.<br>
 3) This browser and Tally Prime are on the same machine or local network.<br>
 4) Some browsers block this as a cross-origin (CORS) request — if the above are all correct and it still fails, that is the likely cause; there is no separate proxy for this in-browser connector.`;
+const TALLY_COMPANY_LIST_XML='<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>EXPORT</TALLYREQUEST><TYPE>COLLECTION</TYPE><ID>CompanyCollection</ID></HEADER><BODY><DESC><TDL><TDLMESSAGE><COLLECTION NAME="CompanyCollection" ISMODIFY="No"><TYPE>Company</TYPE><FETCH>NAME</FETCH></COLLECTION></TDLMESSAGE></TDL></DESC></BODY></ENVELOPE>';
 async function testTallyConnection(){
   tallyStatus('Connecting to Tally…');
   try{
-    const xml='<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><EXPORTDATA><REQUESTDESC><REPORTNAME>List of Companies</REPORTNAME></REQUESTDESC></EXPORTDATA></BODY></ENVELOPE>';
-    await tallyRequest(xml);
+    await tallyRequest(TALLY_COMPANY_LIST_XML);
     tallyStatus('✅ Connected to Tally successfully.');
   }catch(err){
     tallyStatus('❌ Could not connect to Tally.<br><br>'+TALLY_TROUBLESHOOTING+'<br><br><b>Error detail:</b> '+esc(err.message),true);
@@ -1878,9 +1894,8 @@ function renderTallyTable(headers,rows){
 async function fetchTallyCompanies(){
   tallyStatus('Fetching companies…');
   try{
-    const xml='<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><EXPORTDATA><REQUESTDESC><REPORTNAME>List of Companies</REPORTNAME></REQUESTDESC></EXPORTDATA></BODY></ENVELOPE>';
-    const xmlDoc=await tallyRequest(xml);
-    const companies=[...xmlDoc.getElementsByTagName('COMPANY')].map(c=>c.getAttribute('NAME')||c.textContent.trim()).filter(Boolean);
+    const xmlDoc=await tallyRequest(TALLY_COMPANY_LIST_XML);
+    const companies=[...xmlDoc.getElementsByTagName('COMPANY')].map(c=>c.getAttribute('NAME')).filter(Boolean);
     if(!companies.length){
       tallyStatus('Connected, but no company names were found in the response. Your Tally version may format this differently — try "Fetch Ledgers" instead with a company name typed in above, or check the raw response in the browser console.');
       renderTallyTable(['Raw response (first 2000 characters)'],[[xmlDoc.documentElement?.outerHTML?.slice(0,2000)||'(empty)']]);
@@ -1903,9 +1918,9 @@ async function fetchTallyLedgers(){
 <TDL><TDLMESSAGE><COLLECTION NAME="LedgerCollection" ISMODIFY="No"><TYPE>Ledger</TYPE><FETCH>NAME,PARENT,OPENINGBALANCE,CLOSINGBALANCE</FETCH></COLLECTION></TDLMESSAGE></TDL>
 </DESC></BODY></ENVELOPE>`;
     const xmlDoc=await tallyRequest(xml);
-    const ledgers=[...xmlDoc.getElementsByTagName('LEDGER')].map(l=>{
+    const ledgers=[...xmlDoc.getElementsByTagName('LEDGER')].filter(l=>l.getAttribute('NAME')).map(l=>{
       const get=tag=>l.getElementsByTagName(tag)[0]?.textContent||'';
-      return [l.getAttribute('NAME')||get('NAME'),get('PARENT'),get('OPENINGBALANCE')||'0',get('CLOSINGBALANCE')||'0'];
+      return [l.getAttribute('NAME'),get('PARENT'),get('OPENINGBALANCE')||'0',get('CLOSINGBALANCE')||'0'];
     });
     if(!ledgers.length){
       tallyStatus('Connected, but no ledgers were found. Double-check the company name matches exactly what is shown in Tally (case and spacing), or leave it blank to use the currently active company.',true);

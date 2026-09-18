@@ -66,3 +66,58 @@ against a cached sample JSON response instead and flag it honestly"),
 These tool names were confirmed by calling them directly against a live Tally
 MCP connection during development (2026-09-16 and 2026-09-20) — they are not
 guessed.
+
+---
+
+## A second, simpler connector: the L1 app's in-browser Tally Connector
+
+`CA_PracticeOS_Compliance.html` (the L1 app) also has its own **"📊 Tally
+Connector"** section, built independently of the Python/MCP connector above.
+It talks directly to Tally Prime's built-in XML/HTTP gateway (the same port
+9000 interface) using plain browser `fetch()` — no Node.js, no Python, no MCP
+needed for this path.
+
+### Why it needs a relay
+
+A browser cannot POST XML straight to Tally's gateway: Tally doesn't answer
+the CORS preflight check browsers send before a cross-origin POST, so the
+request gets blocked before it ever reaches Tally. This was confirmed live
+(not guessed) — testing directly against a running Tally Prime instance
+during development returned `Failed to fetch` from the app, while a plain
+GET (typing the URL into the address bar) worked fine, which is the
+signature of a CORS block, not a real connectivity problem.
+
+The fix: `connectors/tally_browser_relay.py`, a small dependency-free Python
+script that sits between the browser and Tally. It answers the CORS
+preflight correctly, then forwards the request to Tally over a plain
+server-to-server connection (not subject to browser CORS at all).
+
+```bash
+python connectors/tally_browser_relay.py
+```
+
+Then in the app's Tally Connector section, set **Tally Server URL** to
+`http://localhost:9001` (the relay's port) instead of Tally's own 9000 —
+Tally itself needs no reconfiguration.
+
+### A real Tally XML quirk this connector works around
+
+Tested live against a running Tally Prime (Educational edition) instance on
+2026-09-18: Tally's ledger export embeds illegal XML 1.0 control characters
+as hierarchy-depth markers inside group names — e.g. a `PARENT` value
+literally contains `&#4; Primary`. Character code 4 is syntactically valid
+as an escaped numeric reference but is one of the code points XML 1.0
+forbids outright, so a strict browser `DOMParser` rejects the *entire*
+document over one embedded marker. `sanitizeTallyXml()` strips these before
+parsing. This was a genuine bug caught by testing against real Tally data,
+not a hypothetical.
+
+### Verified live (2026-09-18)
+
+Against a real running Tally Prime instance ("Techno Traders Ltd"):
+Test Connection, Fetch Companies (1 company), and Fetch Ledgers (48 ledgers
+with real opening/closing balances) all confirmed working end to end through
+the relay. Two bugs were caught and fixed during this testing: a stray
+`<CMPINFO>` count element (unrelated metadata that happens to share the tag
+name `COMPANY`/`LEDGER`) was polluting both result lists with a bogus empty
+row — fixed by requiring a `NAME` attribute on matched elements.
