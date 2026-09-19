@@ -6,6 +6,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CA PracticeOS">
+<meta name="theme-color" content="#0b1f3a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>CA PracticeOS | Enterprise Laptop Edition</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -141,18 +146,45 @@ nav button, .sidebar button, aside button { cursor:pointer; }
 <body>
 
 
+<div id="authGate" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0b1f3a,#123f73);padding:20px">
+  <div style="background:#fff;border-radius:14px;padding:32px;max-width:420px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+    <h1 style="margin:0 0 4px;color:#0b1f3a;font-size:22px">CA Practice<span style="color:#c9a227">OS</span> Compliance</h1>
+    <p class="muted" style="margin:0 0 20px">Professional Document &amp; Compliance Suite</p>
+
+    <div id="authLoginForm">
+      <div class="field" style="margin-bottom:12px"><label>Email</label><input id="authLoginEmail" type="email" placeholder="you@yourfirm.com"></div>
+      <div class="field" style="margin-bottom:12px"><label>Password</label><input id="authLoginPassword" type="password" placeholder="Password"></div>
+      <div id="authLoginError" class="notice" style="display:none;border-left-color:var(--red);margin-bottom:12px"></div>
+      <button class="btn gold" style="width:100%" onclick="submitLogin()">Log In</button>
+      <p style="text-align:center;margin-top:14px;font-size:13px">New firm? <a href="#" onclick="showAuthForm('signup');return false">Request access</a></p>
+    </div>
+
+    <div id="authSignupForm" style="display:none">
+      <div class="field" style="margin-bottom:12px"><label>Your Name</label><input id="authSignupName" placeholder="Full name"></div>
+      <div class="field" style="margin-bottom:12px"><label>Firm Name</label><input id="authSignupFirm" placeholder="Your CA firm's name"></div>
+      <div class="field" style="margin-bottom:12px"><label>Email</label><input id="authSignupEmail" type="email" placeholder="you@yourfirm.com"></div>
+      <div class="field" style="margin-bottom:12px"><label>Choose a Password</label><input id="authSignupPassword" type="password" placeholder="At least 8 characters"></div>
+      <div id="authSignupMessage" class="notice" style="display:none;margin-bottom:12px"></div>
+      <button class="btn gold" style="width:100%" onclick="submitSignup()">Request Access</button>
+      <p style="text-align:center;margin-top:14px;font-size:13px">Already approved? <a href="#" onclick="showAuthForm('login');return false">Log in</a></p>
+    </div>
+  </div>
+</div>
+
 <div class="app" id="appRoot">
 <div class="navOverlay" id="navOverlay"></div>
 <aside class="sidebar">
   <div class="brand">
     <h1>CA Practice<span class="gold">OS</span></h1>
     <p>Professional Document & Compliance Suite</p>
-    <p class="gold">CA Shubham Mishra • NSSJ & Co.</p>
+    <p class="gold" id="brandUserLine">CA Shubham Mishra • NSSJ & Co.</p>
+    <p style="margin-top:6px"><a href="#" style="color:#8ea2ba;font-size:11px" onclick="logout();return false">Log Out</a></p>
   </div>
   <div class="nav">
     <div class="section">Workspace</div>
     <button data-view="dashboard" class="active">▦ Dashboard</button>
     <button data-view="aiagents">🤖 AI Agents</button>
+    <button data-view="team">👥 Team Members</button>
     <button data-view="clients">◉ Client Master</button>
     <button data-view="securities">◆ Securities / ISIN Master</button>
     <button data-view="documents">▤ Document Register</button>
@@ -188,7 +220,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
       <button class="menuToggle no-print" id="navToggle" aria-label="Open menu"><span></span></button>
       <div><h2 id="pageTitle">Dashboard</h2><div class="sub">Offline-first • Browser-based • Data stored locally on this device</div></div>
     </div>
-    <div class="actions no-print"><button class="btn" onclick="backupData()">Export Backup</button><button class="btn" onclick="document.getElementById('restoreFile').click()">Import Backup</button><input id="restoreFile" type="file" accept=".json" style="display:none" onchange="restoreData(event)"><button class="btn gold" onclick="window.print()">Print / PDF</button></div>
+    <div class="actions no-print"><button class="btn" id="pwaInstallBtn" onclick="installPwa()" style="display:none">📲 Install App</button><button class="btn" onclick="backupData()">Export Backup</button><button class="btn" onclick="document.getElementById('restoreFile').click()">Import Backup</button><input id="restoreFile" type="file" accept=".json" style="display:none" onchange="restoreData(event)"><button class="btn gold" onclick="window.print()">Print / PDF</button></div>
   </div>
 
   <section id="dashboard" class="view active">
@@ -308,6 +340,23 @@ nav button, .sidebar button, aside button { cursor:pointer; }
 </div>
 <div class="notice">Upload an Excel/CSV securities / ISIN master in bulk (shares, mutual funds, bonds, debentures). Holdings are matched to a client primarily by PAN, then Client Name — clients not already in the Client Master will need to be added there first, or the holding is kept unlinked until then. Use this to auto-fill the Investments / Shares section of a Net Worth Certificate.</div>
       <div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Security Name</th><th>ISIN</th><th>Type</th><th>Quantity</th><th>Value (₹)</th><th>Actions</th></tr></thead><tbody id="securityRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="team" class="view">
+    <div class="card">
+      <h3>👥 Team Members</h3>
+      <div class="notice">Everyone in this list logs in with their own email and password, and sees the same firm data — this is server-backed, not per-browser. Only the firm Admin can add or remove team members.</div>
+      <div id="teamAdminOnly" style="display:none">
+        <div class="formgrid">
+          <div class="field"><label>Name</label><input id="teamNewName" placeholder="Full name"></div>
+          <div class="field"><label>Email</label><input id="teamNewEmail" type="email" placeholder="colleague@yourfirm.com"></div>
+          <div class="field"><label>Password</label><input id="teamNewPassword" type="password" placeholder="Set a password for them"></div>
+          <div class="field"><label>Role</label><select id="teamNewRole"><option>Preparer</option><option>Reviewer</option><option>Approver</option><option>Admin</option></select></div>
+        </div>
+        <div class="actions"><button class="btn gold" onclick="addTeamMember()">+ Add Team Member</button></div>
+      </div>
+      <div class="tablewrap" style="margin-top:16px"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody id="teamRows"><tr><td colspan="3" class="empty">Log in to see team members.</td></tr></tbody></table></div>
     </div>
   </section>
 
@@ -845,6 +894,177 @@ nav button, .sidebar button, aside button { cursor:pointer; }
 </div></div></div>
 
 <script>
+// ---- PWA install support ----
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  const btn=document.getElementById('pwaInstallBtn');
+  if(btn)btn.style.display='inline-flex';
+});
+window.addEventListener('appinstalled',()=>{
+  deferredInstallPrompt=null;
+  const btn=document.getElementById('pwaInstallBtn');
+  if(btn)btn.style.display='none';
+});
+async function installPwa(){
+  if(!deferredInstallPrompt){
+    alert('Install option isn\'t available right now.\n\nDesktop Chrome/Edge: look for an install icon in the address bar.\nMobile: use your browser\'s "Add to Home Screen" menu option.\n\nNote: this requires the app to be opened over http(s) (e.g. a local server or hosted URL), not by double-clicking the file directly.');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;
+  const btn=document.getElementById('pwaInstallBtn');
+  if(btn)btn.style.display='none';
+}
+if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+// ---- Multi-tenant authentication ----
+const DEFAULT_BACKEND_URL='https://ca-practiceos-backend.onrender.com';
+function backendUrl(){
+  return (localStorage.getItem('ca_backend_url')||DEFAULT_BACKEND_URL).replace(/\/$/,'');
+}
+let currentUser=null;
+let authToken=localStorage.getItem('ca_auth_token')||'';
+
+function showAuthGate(){const g=document.getElementById('authGate');if(g)g.style.display='flex'}
+function hideAuthGate(){const g=document.getElementById('authGate');if(g)g.style.display='none'}
+function showAuthForm(which){
+  document.getElementById('authLoginForm').style.display=which==='login'?'block':'none';
+  document.getElementById('authSignupForm').style.display=which==='signup'?'block':'none';
+}
+
+async function checkAuthOnLoad(){
+  if(!authToken){showAuthGate();return}
+  try{
+    const res=await fetch(backendUrl()+'/api/auth/me',{headers:{Authorization:'Bearer '+authToken}});
+    if(!res.ok)throw new Error('invalid session');
+    currentUser=await res.json();
+    onLoginSuccess();
+  }catch(err){
+    authToken='';
+    localStorage.removeItem('ca_auth_token');
+    showAuthGate();
+  }
+}
+
+function onLoginSuccess(){
+  hideAuthGate();
+  const line=document.getElementById('brandUserLine');
+  if(line)line.textContent=currentUser.name+' • '+currentUser.firm_name+' ('+currentUser.role+')';
+  const adminBlock=document.getElementById('teamAdminOnly');
+  if(adminBlock)adminBlock.style.display=currentUser.is_tenant_admin?'block':'none';
+  syncClientsFromServer();
+}
+
+async function submitLogin(){
+  const email=document.getElementById('authLoginEmail').value.trim();
+  const password=document.getElementById('authLoginPassword').value;
+  const errEl=document.getElementById('authLoginError');
+  errEl.style.display='none';
+  if(!email||!password){errEl.textContent='Enter your email and password.';errEl.style.display='block';return}
+  try{
+    const res=await fetch(backendUrl()+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.detail||'Login failed');
+    authToken=data.token;
+    currentUser=data.user;
+    localStorage.setItem('ca_auth_token',authToken);
+    onLoginSuccess();
+  }catch(err){
+    errEl.textContent=err.message;
+    errEl.style.display='block';
+  }
+}
+
+async function submitSignup(){
+  const name=document.getElementById('authSignupName').value.trim();
+  const firm_name=document.getElementById('authSignupFirm').value.trim();
+  const email=document.getElementById('authSignupEmail').value.trim();
+  const password=document.getElementById('authSignupPassword').value;
+  const msgEl=document.getElementById('authSignupMessage');
+  msgEl.style.display='block';
+  msgEl.style.borderLeftColor='var(--gold)';
+  if(!name||!firm_name||!email||!password){msgEl.textContent='Fill in all fields.';msgEl.style.borderLeftColor='var(--red)';return}
+  msgEl.textContent='Submitting request…';
+  try{
+    const res=await fetch(backendUrl()+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,firm_name,email,password})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.detail||'Signup failed');
+    msgEl.textContent=data.message;
+  }catch(err){
+    msgEl.textContent=err.message;
+    msgEl.style.borderLeftColor='var(--red)';
+  }
+}
+
+function logout(){
+  authToken='';
+  currentUser=null;
+  localStorage.removeItem('ca_auth_token');
+  location.reload();
+}
+
+// ---- Team management ----
+async function loadTeamMembers(){
+  const rows=document.getElementById('teamRows');
+  if(!authToken){rows.innerHTML='<tr><td colspan="3" class="empty">Log in to see team members.</td></tr>';return}
+  try{
+    const res=await fetch(backendUrl()+'/api/team/list',{headers:{Authorization:'Bearer '+authToken}});
+    const members=await res.json();
+    rows.innerHTML=members.map(m=>`<tr><td>${esc(m.name)}${m.is_tenant_admin?' <span class="badge blue">Admin</span>':''}</td><td>${esc(m.email)}</td><td>${esc(m.role)}</td></tr>`).join('');
+  }catch(err){
+    rows.innerHTML=`<tr><td colspan="3" class="empty">Could not load team: ${esc(err.message)}</td></tr>`;
+  }
+}
+async function addTeamMember(){
+  const name=document.getElementById('teamNewName').value.trim();
+  const email=document.getElementById('teamNewEmail').value.trim();
+  const password=document.getElementById('teamNewPassword').value;
+  const role=document.getElementById('teamNewRole').value;
+  if(!name||!email||!password){alert('Fill in name, email and password.');return}
+  try{
+    const res=await fetch(backendUrl()+'/api/team/add',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+authToken},body:JSON.stringify({name,email,password,role})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.detail||'Could not add team member');
+    document.getElementById('teamNewName').value='';
+    document.getElementById('teamNewEmail').value='';
+    document.getElementById('teamNewPassword').value='';
+    loadTeamMembers();
+    alert(data.message);
+  }catch(err){
+    alert('Error: '+err.message);
+  }
+}
+
+// ---- Server-backed client sync (replaces localStorage-only for logged-in users) ----
+async function syncClientsFromServer(){
+  if(!authToken)return;
+  try{
+    const res=await fetch(backendUrl()+'/api/clients',{headers:{Authorization:'Bearer '+authToken}});
+    if(!res.ok)return;
+    const serverClients=await res.json();
+    if(serverClients.length){
+      state.clients=serverClients.map(c=>({...c,customFields:{}}));
+      save();
+    }
+  }catch(err){console.warn('Could not sync clients from server:',err)}
+}
+async function pushClientToServer(c){
+  if(!authToken)return;
+  try{
+    await fetch(backendUrl()+'/api/clients',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+authToken},body:JSON.stringify({
+      name:c.name,entity:c.entity,pan:c.pan,gstin:c.gstin,cin:c.cin,contact:c.contact,mobile:c.mobile,email:c.email,address:c.address,state:c.state,sez:!!c.sez
+    })});
+  }catch(err){console.warn('Could not sync client to server:',err)}
+}
+window.addEventListener('load',checkAuthOnLoad);
+
 const KEY='caPracticeOS_v1';
 let state=JSON.parse(localStorage.getItem(KEY)||'null')||{
   settings:{firm:'NSSJ & Co.',ca:'CA Shubham Mishra',membership:'',frn:'',address:'',email:'',phone:'',website:'',gstState:'Delhi',appBaseUrl:'',footer:'This document is prepared based on information and representations provided to us and should be read with the applicable engagement terms and professional requirements.'},
@@ -883,7 +1103,7 @@ function money(n){return new Intl.NumberFormat('en-IN',{style:'currency',currenc
 function numWords(n){n=Math.round(Number(n)||0); if(n===0)return 'Zero Rupees Only'; const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];function two(x){if(x<20)return ones[x];return tens[Math.floor(x/10)]+(x%10?' '+ones[x%10]:'')}function part(x){let a=[];if(x>=100){a.push(ones[Math.floor(x/100)]+' Hundred');x%=100}if(x)a.push(two(x));return a.join(' ')}let out=[];let cr=Math.floor(n/10000000);n%=10000000;let lk=Math.floor(n/100000);n%=100000;let th=Math.floor(n/1000);n%=1000;if(cr)out.push(part(cr)+' Crore');if(lk)out.push(part(lk)+' Lakh');if(th)out.push(part(th)+' Thousand');if(n)out.push(part(n));return out.join(' ')+' Rupees Only'}
 function today(){return new Date().toISOString().slice(0,10)}
 function clientName(id){let c=state.clients.find(x=>x.id===id);return c?c.name:'—'}
-function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',aiagents:'AI Agents',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',tally:'Tally Connector',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); if(id==='settings')loadSettings(); window.scrollTo(0,0)}
+function showView(id){fillGSTStates();document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));const titles={dashboard:'Dashboard',aiagents:'AI Agents',team:'Team Members',clients:'Client Master',securities:'Securities / ISIN Master',documents:'Document Register',engagement:'Engagement Letter',networth:'Net Worth Certificate',certificates:'Certificate Generator',representation:'Representation Letter',workingpaper:'Working Paper',checklist:'Checklists',udin:'UDIN Register',fees:'Professional Fees & GST',reconciliation:'Reconciliation',gstengine:'GST Tax Engine',vault:'Document Vault',versions:'Version Control',contracts:'Contracts & Deeds',signatures:'Digital Signatures',integrations:'Integrations',tally:'Tally Connector',firmsetup:'Firm Setup Wizard',security:'Security & DPDP',settings:'Firm Settings'};document.getElementById('pageTitle').textContent=titles[id]||id; if(id==='checklist')renderChecklist(); if(id==='reconciliation'&&!document.querySelector('#recRows tr')){addRecRow();addRecRow()} if(id==='networth'&&!document.querySelector('#assetRows tr')){loadNWDefaults()} if(id==='documents')renderDocs(); if(id==='firmsetup')renderFirmAccessControl(); if(id==='settings')loadSettings(); if(id==='team')loadTeamMembers(); window.scrollTo(0,0)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{showView(b.dataset.view);closeMobileNav()}));
 
 // ---- Mobile off-canvas navigation ----
@@ -909,7 +1129,7 @@ function openClient(id){let c=state.clients.find(x=>x.id===id)||{id:'',name:'',e
 <div class="field full"><label>Address</label><textarea id="mcAddress">${esc(c.address)}</textarea></div>
 <div class="field full"><label>Custom Fields (Imported)</label><textarea id="mcCustomFields" readonly>${esc(JSON.stringify(c.customFields||{},null,2))}</textarea></div></div>
 <div class="actions" style="margin-top:15px"><button class="btn gold" onclick="saveClient('${id||''}')">Save Client</button></div>`;setTimeout(()=>{const s=document.getElementById('mcState');if(s)s.value=c.state||'Delhi'},0);openModal()}
-function saveClient(id){let existing=id?state.clients.find(x=>x.id===id):null;let c={id:id||crypto.randomUUID(),name:document.getElementById('mcName').value.trim(),entity:document.getElementById('mcEntity').value,pan:document.getElementById('mcPAN').value.trim().toUpperCase(),gstin:document.getElementById('mcGST').value.trim().toUpperCase(),cin:document.getElementById('mcCIN').value.trim(),contact:document.getElementById('mcContact').value.trim(),mobile:document.getElementById('mcMobile').value.trim(),email:document.getElementById('mcEmail').value.trim(),address:document.getElementById('mcAddress').value.trim(),state:document.getElementById('mcState').value||'Delhi',sez:document.getElementById('mcSEZ').value==='yes',customFields:existing?.customFields||{}};if(!c.name){alert('Client name is required.');return}let i=state.clients.findIndex(x=>x.id===c.id);if(i>=0)state.clients[i]=c;else state.clients.push(c);audit('Client Master Updated',c.name);save();closeModal()} 
+function saveClient(id){let existing=id?state.clients.find(x=>x.id===id):null;let c={id:id||crypto.randomUUID(),name:document.getElementById('mcName').value.trim(),entity:document.getElementById('mcEntity').value,pan:document.getElementById('mcPAN').value.trim().toUpperCase(),gstin:document.getElementById('mcGST').value.trim().toUpperCase(),cin:document.getElementById('mcCIN').value.trim(),contact:document.getElementById('mcContact').value.trim(),mobile:document.getElementById('mcMobile').value.trim(),email:document.getElementById('mcEmail').value.trim(),address:document.getElementById('mcAddress').value.trim(),state:document.getElementById('mcState').value||'Delhi',sez:document.getElementById('mcSEZ').value==='yes',customFields:existing?.customFields||{}};if(!c.name){alert('Client name is required.');return}let i=state.clients.findIndex(x=>x.id===c.id);if(i>=0)state.clients[i]=c;else state.clients.push(c);audit('Client Master Updated',c.name);save();pushClientToServer(c);closeModal()}
 function deleteClient(id){if(confirm('Delete this client from local storage?')){state.clients=state.clients.filter(x=>x.id!==id);save()}}
 function addDoc(type,clientId,status='Draft',ref='',extra={}){
   const doc={
@@ -1464,6 +1684,7 @@ function commitPendingClientImport(){
     }
   });
 
+  if(authToken)state.clients.forEach(pushClientToServer);
   audit('Client Master Imported / Updated',`${pendingClientImportFile} | Added ${added} | Updated ${updated} | Skipped ${skipped}`);
   save();
   populateClients();
@@ -1887,7 +2108,11 @@ function saveZohoConfig(){state.integrations.zoho={enabled:true,mode:document.ge
 
 // ---- AI Agent Layer: calls the separately-deployed Python/FastAPI backend ----
 function aiBackendUrl(){
-  return (document.getElementById('aiBackendUrl')?.value||'https://ca-practiceos-backend.onrender.com').trim().replace(/\/$/,'');
+  // Same backend as auth/team/clients - kept as one shared setting (backendUrl())
+  // rather than a separate config, since it's genuinely the same server.
+  const field=document.getElementById('aiBackendUrl');
+  if(field&&field.value.trim())return field.value.trim().replace(/\/$/,'');
+  return backendUrl();
 }
 function aiStatusHtml(msg,isError){
   return `<div class="notice" style="border-left-color:${isError?'var(--red)':'var(--gold)'}">${msg}</div>`;

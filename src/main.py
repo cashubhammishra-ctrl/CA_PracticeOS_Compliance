@@ -3,6 +3,8 @@ FastAPI backend for the CA PracticeOS Compliance AI Agent Layer.
 Wed 16 Sep: setup. Thu 17 Sep: Agent 1 (Onboarding). Fri 18 Sep: Agent 3
 (Compliance) - the product's headline / protected-priority feature.
 Sat 19 Sep: Agent 2 (Drafting), wired into Agent 3.
+Fri 19 Sep (later): multi-tenant auth (signup/approval/login) + team
+management + tenant-scoped client storage, mounted from auth_routes.py.
 """
 import csv
 import io
@@ -17,6 +19,8 @@ from pydantic import BaseModel
 from agents.compliance import CHECKLISTS, ComplianceAgent
 from agents.drafting import DraftingAgent
 from agents.onboarding import OnboardingAgent
+from auth_routes import router as auth_router
+from db import Base, engine
 from schema import CLIENT_MASTER_HEADERS, to_client_master_row
 
 app = FastAPI(title="CA PracticeOS Compliance - AI Agent Layer")
@@ -32,6 +36,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+Base.metadata.create_all(bind=engine)
+app.include_router(auth_router)
 
 _onboarding_agent: OnboardingAgent | None = None
 _compliance_agent: ComplianceAgent | None = None
