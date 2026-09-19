@@ -2,7 +2,7 @@
 Signup (admin-approval-gated), login, session check, and team-member
 management endpoints. Mounted into main.py under /api/auth and /api/team.
 """
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
@@ -51,7 +51,7 @@ def current_user(authorization: str = Header(default=""), db: Session = Depends(
 
 # ---- signup / approval flow -------------------------------------------
 @router.post("/api/auth/signup")
-def signup(payload: SignupRequest, db: Session = Depends(get_db)):
+def signup(payload: SignupRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(400, "An account with this email already exists")
 
@@ -71,7 +71,9 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
 
-    auth.send_approval_request_email(payload.name, payload.email, payload.firm_name, user.approval_token)
+    background_tasks.add_task(
+        auth.send_approval_request_email, payload.name, payload.email, payload.firm_name, user.approval_token
+    )
     return {"message": "Access request submitted. You'll be able to log in once the admin approves your request."}
 
 
