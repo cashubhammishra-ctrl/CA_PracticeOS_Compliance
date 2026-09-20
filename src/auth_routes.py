@@ -150,7 +150,39 @@ def add_team_member(payload: AddTeamMemberRequest, user: User = Depends(current_
 @router.get("/api/team/list")
 def list_team(user: User = Depends(current_user), db: Session = Depends(get_db)):
     members = db.query(User).filter(User.tenant_id == user.tenant_id).all()
-    return [{"name": m.name, "email": m.email, "role": m.role, "is_tenant_admin": m.is_tenant_admin} for m in members]
+    return [
+        {
+            "id": m.id, "name": m.name, "email": m.email, "role": m.role,
+            "is_tenant_admin": m.is_tenant_admin, "status": m.status,
+        }
+        for m in members
+    ]
+
+
+@router.post("/api/team/{member_id}/revoke")
+def revoke_team_member(member_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    if not user.is_tenant_admin:
+        raise HTTPException(403, "Only the firm admin can revoke access")
+    if member_id == user.id:
+        raise HTTPException(400, "You can't revoke your own access")
+    member = db.query(User).filter(User.id == member_id, User.tenant_id == user.tenant_id).first()
+    if not member:
+        raise HTTPException(404, "Team member not found")
+    member.status = "rejected"
+    db.commit()
+    return {"message": f"Revoked access for {member.name}."}
+
+
+@router.post("/api/team/{member_id}/restore")
+def restore_team_member(member_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    if not user.is_tenant_admin:
+        raise HTTPException(403, "Only the firm admin can restore access")
+    member = db.query(User).filter(User.id == member_id, User.tenant_id == user.tenant_id).first()
+    if not member:
+        raise HTTPException(404, "Team member not found")
+    member.status = "approved"
+    db.commit()
+    return {"message": f"Restored access for {member.name}."}
 
 
 # ---- tenant-scoped client data (replaces localStorage for logged-in use) --

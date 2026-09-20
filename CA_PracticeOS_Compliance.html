@@ -356,7 +356,7 @@ nav button, .sidebar button, aside button { cursor:pointer; }
         </div>
         <div class="actions"><button class="btn gold" onclick="addTeamMember()">+ Add Team Member</button></div>
       </div>
-      <div class="tablewrap" style="margin-top:16px"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody id="teamRows"><tr><td colspan="3" class="empty">Log in to see team members.</td></tr></tbody></table></div>
+      <div class="tablewrap" style="margin-top:16px"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr></thead><tbody id="teamRows"><tr><td colspan="5" class="empty">Log in to see team members.</td></tr></tbody></table></div>
     </div>
   </section>
 
@@ -1017,9 +1017,40 @@ async function loadTeamMembers(){
   try{
     const res=await fetch(backendUrl()+'/api/team/list',{headers:{Authorization:'Bearer '+authToken}});
     const members=await res.json();
-    rows.innerHTML=members.map(m=>`<tr><td>${esc(m.name)}${m.is_tenant_admin?' <span class="badge blue">Admin</span>':''}</td><td>${esc(m.email)}</td><td>${esc(m.role)}</td></tr>`).join('');
+    const isSelf=(m)=>currentUser&&m.email===currentUser.email;
+    rows.innerHTML=members.map(m=>{
+      const statusBadge=m.status==='rejected'?'<span class="badge red">Revoked</span>':m.status==='pending'?'<span class="badge">Pending</span>':'<span class="badge green">Active</span>';
+      let action='—';
+      if(currentUser&&currentUser.is_tenant_admin&&!isSelf(m)){
+        action=m.status==='rejected'
+          ?`<button class="btn small" onclick="restoreTeamMember('${m.id}','${esc(m.name)}')">Restore</button>`
+          :`<button class="btn small" onclick="revokeTeamMember('${m.id}','${esc(m.name)}')">Revoke</button>`;
+      }
+      return `<tr><td>${esc(m.name)}${m.is_tenant_admin?' <span class="badge blue">Admin</span>':''}</td><td>${esc(m.email)}</td><td>${esc(m.role)}</td><td>${statusBadge}</td><td>${action}</td></tr>`;
+    }).join('');
   }catch(err){
-    rows.innerHTML=`<tr><td colspan="3" class="empty">Could not load team: ${esc(err.message)}</td></tr>`;
+    rows.innerHTML=`<tr><td colspan="5" class="empty">Could not load team: ${esc(err.message)}</td></tr>`;
+  }
+}
+async function revokeTeamMember(id,name){
+  if(!confirm(`Revoke access for ${name}? They won't be able to log in until you restore them.`))return;
+  try{
+    const res=await fetch(backendUrl()+'/api/team/'+id+'/revoke',{method:'POST',headers:{Authorization:'Bearer '+authToken}});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.detail||'Could not revoke access');
+    loadTeamMembers();
+  }catch(err){
+    alert('Error: '+err.message);
+  }
+}
+async function restoreTeamMember(id,name){
+  try{
+    const res=await fetch(backendUrl()+'/api/team/'+id+'/restore',{method:'POST',headers:{Authorization:'Bearer '+authToken}});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.detail||'Could not restore access');
+    loadTeamMembers();
+  }catch(err){
+    alert('Error: '+err.message);
   }
 }
 async function addTeamMember(){
