@@ -2,6 +2,10 @@
 Signup (admin-approval-gated), login, session check, and team-member
 management endpoints. Mounted into main.py under /api/auth and /api/team.
 """
+import html
+import os
+import secrets as _secrets
+
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, EmailStr
@@ -12,6 +16,8 @@ from db import get_db
 from models import Client, Tenant, User
 
 router = APIRouter()
+
+PLATFORM_ADMIN_SECRET = os.getenv("PLATFORM_ADMIN_SECRET", "")
 
 
 # ---- request/response schemas ------------------------------------------
@@ -227,3 +233,72 @@ def add_client(payload: ClientPayload, user: User = Depends(current_user), db: S
     db.add(client)
     db.commit()
     return {"id": client.id, "action": "created"}
+
+
+# ---- platform-owner firm management (revoke/restore an entire firm) -------
+# Not tied to any one firm's own login - gated by a separate secret only the
+# platform owner knows (PLATFORM_ADMIN_SECRET env var on Render). Bookmark
+# GET /api/admin/firms?secret=... to reach this at any time.
+def _check_admin_secret(secret: str):
+    if not PLATFORM_ADMIN_SECRET or not _secrets.compare_digest(secret or "", PLATFORM_ADMIN_SECRET):
+        raise HTTPException(403, "Invalid or missing admin secret")
+
+
+def _firms_page(rows_html: str, secret: str, notice: str = "") -> str:
+    return f"""<html><head><title>CA PracticeOS - Firm Management</title>
+<style>body{{font-family:Arial,sans-serif;padding:30px;color:#0b1f3a}}
+table{{border-collapse:collapse;width:100%;margin-top:16px}}
+th,td{{border:1px solid #ccc;padding:8px 10px;text-align:left;font-size:14px}}
+th{{background:#0b1f3a;color:#fff}}a{{color:#0b1f3a;font-weight:700}}
+.notice{{background:#fff3dd;padding:10px 14px;border-left:4px solid #c9a227;margin-bottom:10px}}</style>
+</head><body><h2>CA PracticeOS — Firm Management</h2>
+{f'<div class="notice">{notice}</div>' if notice else ''}
+<table><tr><th>Firm</th><th>Admin</th><th>Members</th><th>Status</th><th>Action</th></tr>
+{rows_html}</table>
+<p style="margin-top:20px;font-size:12px;color:#777">Bookmark this page: <code>/api/admin/firms?secret=***</code></p>
+</body></html>"""
+
+
+@router.get("/api/admin/firms", response_class=HTMLResponse)
+def list_firms(secret: str = "", db: Session = Depends(get_db)):
+    _check_admin_secret(secret)
+    tenants = db.query(Tenant).all()
+    rows = []
+    for t in tenants:
+        admin = next((u for u in t.users if u.is_tenant_admin), None)
+        status = admin.status if admin else "no admin"
+        action = (
+            f'<a href="/api/admin/firms/{t.id}/restore?secret={html.escape(secret)}">Restore</a>'
+            if status == "rejected"
+            else f'<a href="/api/admin/firms/{t.id}/revoke?secret={html.escape(secret)}">Revoke</a>'
+        )
+        rows.append(
+            f"<tr><td>{html.escape(t.firm_name)}</td>"
+            f"<td>{html.escape(admin.name) if admin else '-'} ({html.escape(admin.email) if admin else '-'})</td>"
+            f"<td>{len(t.users)}</td><td>{html.escape(status)}</td><td>{action}</td></tr>"
+        )
+    return HTMLResponse(_firms_page("".join(rows), secret))
+
+
+@router.get("/api/admin/firms/{tenant_id}/revoke", response_class=HTMLResponse)
+def revoke_firm(tenant_id: str, secret: str = "", db: Session = Depends(get_db)):
+    _check_admin_secret(secret)
+    members = db.query(User).filter(User.tenant_id == tenant_id).all()
+    if not members:
+        return HTMLResponse("<h2>Firm not found.</h2>", status_code=404)
+    for m in members:
+        m.status = "rejected"
+    db.commit()
+    return list_firms(secret, db)  # type: ignore[arg-type]
+
+
+@router.get("/api/admin/firms/{tenant_id}/restore", response_class=HTMLResponse)
+def restore_firm(tenant_id: str, secret: str = "", db: Session = Depends(get_db)):
+    _check_admin_secret(secret)
+    members = db.query(User).filter(User.tenant_id == tenant_id).all()
+    if not members:
+        return HTMLResponse("<h2>Firm not found.</h2>", status_code=404)
+    for m in members:
+        m.status = "approved"
+    db.commit()
+    return list_firms(secret, db)  # type: ignore[arg-type]
