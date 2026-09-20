@@ -595,22 +595,22 @@ nav button, .sidebar button, aside button { cursor:pointer; }
     </div>
   
     <div class="card" id="firmAccessControl" style="margin-top:16px">
-      <h3>4. Firm Access Control & Approval Workflow</h3>
-      <div class="notice"><b>Configure who prepares and who approves.</b> In the production hosted version, the same records will drive RBAC and server-side email notifications. The offline version stores the configuration locally and can prepare mailto notifications.</div>
+      <h3>4. Document Review Email Routing</h3>
+      <div class="notice"><b>This does NOT control who can log into the app.</b> It only sets which email address gets a notification when a document (engagement letter, certificate, etc.) is submitted, approved, or returned for changes. For who can actually log in and use CA PracticeOS — adding, revoking or restoring staff — use <b>Team Members</b> in the sidebar instead. The names below are just contact labels for these notification emails; the offline version prepares them as mailto links.</div>
       <div class="formgrid">
-        <div class="field"><label>Admin Name</label><input id="adminName" placeholder="Firm Admin / Partner"></div>
-        <div class="field"><label>Admin Email</label><input id="adminEmail" type="email" placeholder="admin@firm.com"></div>
-        <div class="field"><label>Preparer Name</label><input id="preparerName" placeholder="Article / Staff / Manager"></div>
-        <div class="field"><label>Preparer Email</label><input id="preparerEmail" type="email" placeholder="preparer@firm.com"></div>
-        <div class="field"><label>Approver Name</label><input id="approverName" placeholder="Partner / Reviewer"></div>
-        <div class="field"><label>Approver Email</label><input id="approverEmail" type="email" placeholder="approver@firm.com"></div>
-        <div class="field full"><label>Hosted Utility URL</label><input id="appBaseUrl" placeholder="https://practiceos.yourfirm.in"></div>
+        <div class="field"><label>Admin Name (contact label only)</label><input id="adminName" placeholder="Firm Admin / Partner"></div>
+        <div class="field"><label>Admin Email (contact label only)</label><input id="adminEmail" type="email" placeholder="admin@firm.com"></div>
+        <div class="field"><label>Preparer Name (receives "returned for changes" emails)</label><input id="preparerName" placeholder="Article / Staff / Manager"></div>
+        <div class="field"><label>Preparer Email (receives "returned for changes" emails)</label><input id="preparerEmail" type="email" placeholder="preparer@firm.com"></div>
+        <div class="field"><label>Approver Name (receives "submitted for approval" emails)</label><input id="approverName" placeholder="Partner / Reviewer"></div>
+        <div class="field"><label>Approver Email (receives "submitted for approval" emails)</label><input id="approverEmail" type="email" placeholder="approver@firm.com"></div>
+        <div class="field full"><label>Hosted Utility URL (included as a link in the notification email)</label><input id="appBaseUrl" placeholder="https://practiceos.yourfirm.in"></div>
       </div>
       <div class="actions">
-        <button class="btn gold" onclick="saveFirmAccessControl()">Save Access & Email Workflow</button>
+        <button class="btn gold" onclick="saveFirmAccessControl()">Save Email Routing</button>
         <button class="btn" onclick="testApprovalEmail()">Test Approval Email</button>
       </div>
-      <div class="notice" style="margin-top:10px"><b>Workflow:</b> Preparer submits → Approver email with secure review link → Approve or Return with comments → automatic notification to Preparer → revise → resubmit until approved.</div>
+      <div class="notice" style="margin-top:10px"><b>Email workflow:</b> Preparer submits a document → Approver gets an email with a review link → Approve or Return with comments → Preparer gets a notification email → revise → resubmit until approved. This is separate from app login access, which is managed under Team Members.</div>
     </div>
 </section>
 
