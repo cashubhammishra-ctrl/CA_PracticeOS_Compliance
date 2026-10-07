@@ -181,34 +181,35 @@ nav button, .sidebar button, aside button { cursor:pointer; }
     <p style="margin-top:6px"><a href="#" style="color:#8ea2ba;font-size:11px" onclick="logout();return false">Log Out</a></p>
   </div>
   <div class="nav">
-    <div class="section">Workspace</div>
     <button data-view="dashboard" class="active">▦ Dashboard</button>
-    <button data-view="aiagents">🤖 AI Agents</button>
-    <button data-view="team">👥 Team Members</button>
+    <div class="section">Clients</div>
     <button data-view="clients">◉ Client Master</button>
     <button data-view="securities">◆ Securities / ISIN Master</button>
-    <button data-view="documents">▤ Document Register</button>
-    <div class="section">Documents</div>
+    <button data-view="team">👥 Team Members</button>
+    <button data-view="aiagents">🤖 AI Agents</button>
+    <div class="section">Draft</div>
     <button data-view="engagement">✎ Engagement Letter</button>
     <button data-view="networth">₹ Net Worth Certificate</button>
     <button data-view="certificates">✓ Certificate Generator</button>
     <button data-view="representation">▭ Representation Letter</button>
     <button data-view="workingpaper">▥ Working Paper</button>
+    <div class="section">Review</div>
     <button data-view="checklist">☑ Checklists</button>
-    <div class="section">Compliance</div>
+    <button onclick="openApprovalQueue()">✓ Approval Queue</button>
+    <button data-view="gstengine">▤ GST Tax Engine</button>
+    <button data-view="reconciliation">⇄ Reconciliation</button>
+    <div class="section">Issue</div>
+    <button data-view="vault">🗂 Document Vault</button>
+    <button data-view="signatures">✍ Digital Signatures</button>
+    <button data-view="contracts">📜 Contracts & Deeds</button>
+    <div class="section">Track</div>
+    <button data-view="documents">▤ Document Register</button>
     <button data-view="udin">◈ UDIN Register</button>
     <button data-view="fees">₹ Professional Fees & GST</button>
-    <button data-view="gstengine">▤ GST Tax Engine</button>
-    <button data-view="documents">▤ Document Register</button>
-    <button data-view="vault">🗂 Document Vault</button>
-    <button onclick="openApprovalQueue()">✓ Approval Queue</button>
-    <button data-view="contracts">📜 Contracts & Deeds</button>
-    <button data-view="signatures">✍ Digital Signatures</button>
-    <button data-view="integrations">🔗 Integrations</button>
-    <button data-view="tally">📊 Tally Connector</button>
-    <button data-view="reconciliation">⇄ Reconciliation</button>
     <div class="section">System</div>
     <button data-view="firmsetup">★ Firm Setup Wizard</button>
+    <button data-view="integrations">🔗 Integrations</button>
+    <button data-view="tally">📊 Tally Connector</button>
     <button data-view="security">🔐 Security & DPDP</button>
     <button data-view="settings">⚙ Settings</button>
   </div>
@@ -1150,7 +1151,28 @@ function renderRecent(){let el=document.getElementById('recentDocs');let a=state
 
 
 function populateClients(){['elClient','nwClient','certClient','repClient','wpClient','recClient','feeClient','vaultClient','verClient','contractClient','sigClient','gstClient'].forEach(id=>{let s=document.getElementById(id);if(!s)return;let old=s.value;s.innerHTML='<option value="">Select client</option>'+state.clients.map(c=>`<option value="${c.id}">${esc(c.name)}${c.pan?' • '+esc(c.pan):''}</option>`).join('');s.value=old})}
-function renderClients(){let q=(document.getElementById('clientSearch')?.value||'').toLowerCase();let rows=state.clients.filter(c=>(c.name+' '+c.pan+' '+c.gstin+' '+JSON.stringify(c.customFields||{})).toLowerCase().includes(q));document.getElementById('clientRows').innerHTML=rows.length?rows.map(c=>`<tr><td><b>${esc(c.name)}</b><br><span class="muted">${esc(c.email||'')}</span></td><td>${esc(c.entity)}</td><td>${esc(c.pan)}</td><td>${esc(c.gstin)}</td><td>${esc(c.mobile)}</td><td><button class="btn small" onclick="openClient('${c.id}')">Edit</button> <button class="btn small" onclick="deleteClient('${c.id}')">Delete</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">No clients found.</td></tr>'}
+function renderClients(){let q=(document.getElementById('clientSearch')?.value||'').toLowerCase();let rows=state.clients.filter(c=>(c.name+' '+c.pan+' '+c.gstin+' '+JSON.stringify(c.customFields||{})).toLowerCase().includes(q));document.getElementById('clientRows').innerHTML=rows.length?rows.map(c=>`<tr><td><b>${esc(c.name)}</b><br><span class="muted">${esc(c.email||'')}</span></td><td>${esc(c.entity)}</td><td>${esc(c.pan)}</td><td>${esc(c.gstin)}</td><td>${esc(c.mobile)}</td><td><button class="btn small gold" onclick="openClient360('${c.id}')">360°</button> <button class="btn small" onclick="openClient('${c.id}')">Edit</button> <button class="btn small" onclick="deleteClient('${c.id}')">Delete</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">No clients found.</td></tr>'}
+function openClient360(id){
+  const c=state.clients.find(x=>x.id===id);if(!c)return;
+  const docs=state.docs.filter(d=>d.clientId===id);
+  const fees=(state.fees||[]).filter(f=>f.clientId===id);
+  const udins=state.udin.filter(u=>u.clientId===id);
+  const contracts=(state.contracts||[]).filter(x=>x.clientId===id);
+  const vault=(state.vaultFiles||[]).filter(x=>x.clientId===id);
+  const sigs=(state.signatures||[]).filter(x=>x.clientId===id);
+  const section=(title,rows,cols)=>`<div class="card" style="margin-top:12px"><h3 style="font-size:14px">${title} (${rows.length})</h3>${rows.length?`<div class="tablewrap"><table class="table"><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(c[1](r))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<p class="empty">None recorded.</p>'}</div>`;
+  document.getElementById('modalTitle').textContent=`Client 360 — ${c.name}`;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="card"><b>${esc(c.name)}</b> • ${esc(c.entity)}<br>PAN: ${esc(c.pan)||'—'} • GSTIN: ${esc(c.gstin)||'—'}<br>${esc(c.mobile)||''} ${c.email?'• '+esc(c.email):''}</div>
+    ${section('Documents',docs,[['Date',d=>d.date],['Type',d=>d.type],['Version',d=>d.versionNo],['Status',d=>d.status]])}
+    ${section('Fees',fees,[['Date',f=>f.date],['Service',f=>f.service],['Total',f=>money(f.total)],['Balance',f=>money(f.balance)]])}
+    ${section('UDIN Records',udins,[['Date',u=>u.date],['Document',u=>u.document],['UDIN',u=>u.udin],['Status',u=>u.status]])}
+    ${section('Contracts / Deeds',contracts,[['Type',x=>x.type],['No.',x=>x.no],['Start',x=>x.start],['End',x=>x.end],['Status',x=>x.status]])}
+    ${section('Vault Files',vault,[['Date',x=>x.date],['Type',x=>x.type],['Name',x=>x.name],['Status',x=>x.status]])}
+    ${section('Signature Requests',sigs,[['Date',x=>x.date],['Document',x=>x.document],['Method',x=>x.method],['Status',x=>x.status]])}
+  `;
+  openModal();
+}
 function openClient(id){let c=state.clients.find(x=>x.id===id)||{id:'',name:'',entity:'Individual',pan:'',gstin:'',cin:'',address:'',mobile:'',email:'',contact:'',state:'Delhi',sez:false,customFields:{}};c.customFields=c.customFields||{};document.getElementById('modalTitle').textContent=id?'Edit Client':'Add Client';document.getElementById('modalBody').innerHTML=`<div class="formgrid">
 <div class="field"><label>Client Name</label><input id="mcName" value="${esc(c.name)}"></div><div class="field"><label>Entity Type</label><select id="mcEntity">${['Individual','Proprietorship','Partnership','LLP','Private Limited Company','Public Limited Company','Trust','Society','Other'].map(x=>`<option ${c.entity===x?'selected':''}>${x}</option>`).join('')}</select></div>
 <div class="field"><label>PAN</label><input id="mcPAN" value="${esc(c.pan)}"></div><div class="field"><label>GSTIN</label><input id="mcGST" value="${esc(c.gstin)}"></div>
