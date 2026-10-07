@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 import auth
 from db import get_db
-from models import Client, Tenant, User
+from models import Client, Tenant, TenantBackup, User
 
 router = APIRouter()
 
@@ -233,6 +233,64 @@ def add_client(payload: ClientPayload, user: User = Depends(current_user), db: S
     db.add(client)
     db.commit()
     return {"id": client.id, "action": "created"}
+
+
+# ---- versioned cloud backup of a firm's browser data (firm admin only) -----
+MAX_BACKUP_BYTES = 10_000_000
+KEEP_BACKUPS = 10
+
+
+class BackupPayload(BaseModel):
+    data: str
+
+
+def _require_admin(user: User):
+    if not user.is_tenant_admin:
+        raise HTTPException(403, "Only the firm admin can use cloud backup")
+
+
+@router.put("/api/backup")
+def save_backup(payload: BackupPayload, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    _require_admin(user)
+    if len(payload.data) > MAX_BACKUP_BYTES:
+        raise HTTPException(413, "Backup is too large for cloud storage")
+    db.add(TenantBackup(tenant_id=user.tenant_id, user_email=user.email, size=len(payload.data), data=payload.data))
+    db.commit()
+    old = (
+        db.query(TenantBackup.id)
+        .filter(TenantBackup.tenant_id == user.tenant_id)
+        .order_by(TenantBackup.created_at.desc())
+        .offset(KEEP_BACKUPS)
+        .all()
+    )
+    if old:
+        db.query(TenantBackup).filter(TenantBackup.id.in_([o[0] for o in old])).delete(synchronize_session=False)
+        db.commit()
+    return {"message": "Backup saved"}
+
+
+@router.get("/api/backup/list")
+def list_backups(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    _require_admin(user)
+    rows = (
+        db.query(TenantBackup.id, TenantBackup.user_email, TenantBackup.size, TenantBackup.created_at)
+        .filter(TenantBackup.tenant_id == user.tenant_id)
+        .order_by(TenantBackup.created_at.desc())
+        .all()
+    )
+    return [
+        {"id": r.id, "user_email": r.user_email, "size": r.size, "created_at": r.created_at.isoformat() + "Z"}
+        for r in rows
+    ]
+
+
+@router.get("/api/backup/{backup_id}")
+def get_backup(backup_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    _require_admin(user)
+    row = db.query(TenantBackup).filter(TenantBackup.id == backup_id, TenantBackup.tenant_id == user.tenant_id).first()
+    if not row:
+        raise HTTPException(404, "Backup not found")
+    return {"id": row.id, "created_at": row.created_at.isoformat() + "Z", "data": row.data}
 
 
 # ---- platform-owner firm management (revoke/restore an entire firm) -------

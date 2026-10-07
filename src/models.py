@@ -49,6 +49,17 @@ class User(Base):
     tenant: Mapped["Tenant"] = relationship(back_populates="users")
 
 
+class TenantBackup(Base):
+    """Versioned snapshot of a firm's browser data, saved by the firm admin."""
+    __tablename__ = "tenant_backups"
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
+    user_email: Mapped[str] = mapped_column(String, default="")
+    size: Mapped[int] = mapped_column(default=0)
+    data: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
 class Client(Base):
     """Mirrors the L1 app's localStorage client shape, scoped per tenant."""
     __tablename__ = "clients"
