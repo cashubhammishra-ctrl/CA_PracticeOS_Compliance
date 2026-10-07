@@ -15,6 +15,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy import text
 
 from agents.compliance import CHECKLISTS, ComplianceAgent
 from agents.drafting import DraftingAgent
@@ -69,6 +70,18 @@ def get_drafting_agent() -> DraftingAgent:
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/health/db")
+def health_db():
+    """Runs a trivial query so a scheduled ping counts as real database
+    activity (keeps Supabase's free tier from auto-pausing after 7 idle days)."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "reachable"}
+    except Exception as exc:
+        raise HTTPException(503, f"Database unreachable: {exc}") from exc
 
 
 @app.post("/api/onboarding/extract")
