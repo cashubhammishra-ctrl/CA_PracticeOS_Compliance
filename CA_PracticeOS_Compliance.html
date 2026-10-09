@@ -1173,10 +1173,15 @@ async function syncClientsFromServer(){
     const res=await fetch(backendUrl()+'/api/clients',{headers:{Authorization:'Bearer '+authToken}});
     if(!res.ok)return;
     const serverClients=await res.json();
-    if(serverClients.length){
-      state.clients=serverClients.map(c=>({...c,customFields:{}}));
-      save();
-    }
+    // MERGE, never replace: keep every local client, add any the cloud has that this device lacks,
+    // and send up any local client the cloud does not have yet. Match on PAN, else on name.
+    const key=c=>((c.pan||'').trim().toUpperCase())||('N:'+(c.name||'').trim().toLowerCase());
+    const localKeys=new Set(state.clients.map(key));
+    const serverKeys=new Set(serverClients.map(key));
+    let added=false;
+    serverClients.forEach(s=>{if(!localKeys.has(key(s))){state.clients.push({...s,customFields:{}});added=true}});
+    if(added)save();
+    for(const c of state.clients){if(!serverKeys.has(key(c)))await pushClientToServer(c)}
   }catch(err){console.warn('Could not sync clients from server:',err)}
 }
 async function pushClientToServer(c){
@@ -2376,6 +2381,7 @@ function addAIExtractedClient(){
   if(idx>=0)state.clients[idx]=rec;else state.clients.push(rec);
   audit('Client Added via AI Onboarding Agent',rec.name);
   save();
+  pushClientToServer(rec);
   alert((idx>=0?'Updated':'Added')+' client: '+rec.name+'\n\nCheck Client Master to see it.');
 }
 

@@ -9,6 +9,7 @@ import secrets as _secrets
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 import auth
@@ -224,6 +225,13 @@ def add_client(payload: ClientPayload, user: User = Depends(current_user), db: S
     existing = None
     if payload.pan:
         existing = db.query(Client).filter(Client.tenant_id == user.tenant_id, Client.pan == payload.pan).first()
+    elif payload.name.strip():
+        # No PAN to match on: fall back to the name so repeated syncs don't create duplicates.
+        existing = (
+            db.query(Client)
+            .filter(Client.tenant_id == user.tenant_id, func.lower(Client.name) == payload.name.strip().lower(), Client.pan == "")
+            .first()
+        )
     if existing:
         for field, value in payload.model_dump().items():
             setattr(existing, field, value)
