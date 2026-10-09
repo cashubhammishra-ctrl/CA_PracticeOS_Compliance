@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CA PracticeOS">
 <meta name="theme-color" content="#0b1f3a">
 <link rel="manifest" href="manifest.json">
@@ -952,18 +953,21 @@ nav button, .sidebar button, aside button { cursor:pointer; }
 <script>
 // ---- PWA install support ----
 let deferredInstallPrompt=null;
+function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
+function refreshInstallBtn(){const btn=document.getElementById('pwaInstallBtn');if(!btn)return;btn.style.display=(!isStandalone()&&(deferredInstallPrompt||isIOS()))?'inline-flex':'none'}
 window.addEventListener('beforeinstallprompt',(e)=>{
   e.preventDefault();
   deferredInstallPrompt=e;
-  const btn=document.getElementById('pwaInstallBtn');
-  if(btn)btn.style.display='inline-flex';
+  refreshInstallBtn();
 });
 window.addEventListener('appinstalled',()=>{
   deferredInstallPrompt=null;
-  const btn=document.getElementById('pwaInstallBtn');
-  if(btn)btn.style.display='none';
+  refreshInstallBtn();
 });
+window.addEventListener('DOMContentLoaded',refreshInstallBtn);
 async function installPwa(){
+  if(!deferredInstallPrompt&&isIOS()){alert('To install on iPhone / iPad:\n\n1. Open this page in Safari (not Chrome).\n2. Tap the Share button (the square with an up arrow).\n3. Scroll down and tap "Add to Home Screen".\n4. Tap "Add".\n\nThe CA PracticeOS icon will then appear on your home screen and open full-screen like an app.');return}
   if(!deferredInstallPrompt){
     alert('Install option isn\'t available right now.\n\nDesktop Chrome/Edge: look for an install icon in the address bar.\nMobile: use your browser\'s "Add to Home Screen" menu option.\n\nNote: this requires the app to be opened over http(s) (e.g. a local server or hosted URL), not by double-clicking the file directly.');
     return;
@@ -996,18 +1000,44 @@ function showAuthForm(which){
 }
 
 async function checkAuthOnLoad(){
-  if(!authToken){showAuthGate();return}
+  if(!authToken){showAuthGate();fetch(backendUrl()+'/health',{cache:'no-store'}).catch(()=>{});return}
   try{
     const res=await fetch(backendUrl()+'/api/auth/me',{headers:{Authorization:'Bearer '+authToken}});
-    if(!res.ok)throw new Error('invalid session');
+    if(res.status===401||res.status===403)throw new Error('invalid session');
+    if(!res.ok)throw new TypeError('server error '+res.status);
     currentUser=await res.json();
+    try{localStorage.setItem('ca_user_cache',JSON.stringify(currentUser))}catch(e){}
     onLoginSuccess();
   }catch(err){
-    authToken='';
-    localStorage.removeItem('ca_auth_token');
-    showAuthGate();
+    if(err.message==='invalid session'){
+      authToken='';
+      localStorage.removeItem('ca_auth_token');
+      localStorage.removeItem('ca_user_cache');
+      showAuthGate();
+      return;
+    }
+    // Offline, or the free-tier server is still waking up: keep the saved login and work from the last known profile.
+    let cached=null;try{cached=JSON.parse(localStorage.getItem('ca_user_cache')||'null')}catch(e){}
+    if(cached){currentUser=cached;onLoginSuccess();showConnectionNotice()}else{showAuthGate()}
   }
 }
+function showConnectionNotice(){
+  let b=document.getElementById('connBanner');
+  if(!b){b=document.createElement('div');b.id='connBanner';b.className='banner warn no-print';const main=document.querySelector('main.main');main.insertBefore(b,main.firstChild)}
+  b.innerHTML='<div class="grow"><b>Can\'t reach the server right now</b> (you may be offline, or the server is waking up — this can take up to a minute). Data saved on this device is still available. AI agents, login changes and cloud backup need a connection.</div><button class="btn small gold" onclick="retryConnection()">Retry</button>';
+}
+async function retryConnection(){
+  try{
+    const res=await fetch(backendUrl()+'/api/auth/me',{headers:{Authorization:'Bearer '+authToken}});
+    if(res.status===401||res.status===403){logout();return}
+    if(!res.ok)throw new Error('server error');
+    currentUser=await res.json();
+    try{localStorage.setItem('ca_user_cache',JSON.stringify(currentUser))}catch(e){}
+    document.getElementById('connBanner')?.remove();
+    onLoginSuccess();
+  }catch(e){alert('Still can\'t reach the server. If it has been idle it can take up to a minute to wake — please try again shortly.')}
+}
+window.addEventListener('online',()=>{if(document.getElementById('connBanner'))retryConnection()});
 
 function onLoginSuccess(){
   hideAuthGate();
@@ -1024,6 +1054,7 @@ async function submitLogin(){
   const errEl=document.getElementById('authLoginError');
   errEl.style.display='none';
   if(!email||!password){errEl.textContent='Enter your email and password.';errEl.style.display='block';return}
+  const wake=setTimeout(()=>{errEl.textContent='Waking up the server — the first login after a quiet spell can take up to a minute. Please keep this page open…';errEl.style.display='block'},4000);
   try{
     const res=await fetch(backendUrl()+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
     const data=await res.json();
@@ -1031,11 +1062,13 @@ async function submitLogin(){
     authToken=data.token;
     currentUser=data.user;
     localStorage.setItem('ca_auth_token',authToken);
+    try{localStorage.setItem('ca_user_cache',JSON.stringify(currentUser))}catch(e){}
+    errEl.style.display='none';
     onLoginSuccess();
   }catch(err){
-    errEl.textContent=err.message;
+    errEl.textContent=(err instanceof TypeError)?'Could not reach the server. Check your internet connection and try again.':err.message;
     errEl.style.display='block';
-  }
+  }finally{clearTimeout(wake)}
 }
 
 async function submitSignup(){
@@ -1063,6 +1096,7 @@ function logout(){
   authToken='';
   currentUser=null;
   localStorage.removeItem('ca_auth_token');
+  localStorage.removeItem('ca_user_cache');
   location.reload();
 }
 
