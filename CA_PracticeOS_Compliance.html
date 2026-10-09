@@ -13,7 +13,10 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>CA PracticeOS | Enterprise Laptop Edition</title>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+// Excel import library: loaded in the background AFTER the app is on screen, so a slow or blocked CDN can never freeze the page.
+window.addEventListener('load',function(){setTimeout(function(){var s=document.createElement('script');s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';s.async=true;document.head.appendChild(s)},0)});
+</script>
 <style>
 :root{
   --navy:#0b1f3a;--blue:#123f73;--gold:#c9a227;--gold2:#e8d08a;
